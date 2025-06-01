@@ -23,6 +23,9 @@ public class Cinema extends AbstractBaseEntity {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "phone")
+    private String phone;
+
     @OneToMany(mappedBy = "cinema")
     private Set<CityCinema> cityCinemas;
 
@@ -48,5 +51,13 @@ public class Cinema extends AbstractBaseEntity {
 
     public void setCityCinemas(Set<CityCinema> cityCinemas) {
         this.cityCinemas = cityCinemas;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }
