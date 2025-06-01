@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.gen.cinema.domain.MovieSchedule;
 import com.gen.cinema.dto.response.MovieResponseDTO;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,5 +38,16 @@ public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Lo
         @Param("studioId") Long studioId,
         @Param("movieId") Long movieId,
         @Param("startOfToday") LocalDateTime startOfToday
+    );
+
+    @Query("SELECT ms FROM MovieSchedule ms " +
+           "WHERE ms.studio.id = :studioId " +
+           "AND ms.movie.id = :movieId " +
+           "AND DATE(ms.startTime) = :date " +
+           "ORDER BY ms.startTime ASC")
+    List<MovieSchedule> findSchedulesByStudioMovieAndDate(
+        @Param("studioId") Long studioId,
+        @Param("movieId") Long movieId,
+        @Param("date") LocalDate date
     );
 } 
