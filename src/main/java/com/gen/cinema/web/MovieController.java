@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gen.cinema.dto.response.MovieResponseDTO;
+import com.gen.cinema.dto.response.MovieDetailResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.service.MovieService;
 import jakarta.validation.constraints.NotNull;
@@ -34,5 +35,11 @@ public class MovieController {
         
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(movieService.getMoviesByCinemaCode(cinemaCode, pageable));
+    }
+
+    @GetMapping("/{movieId}")
+    public ResponseEntity<MovieDetailResponseDTO> getMovieDetail(
+            @PathVariable Long movieId) {
+        return ResponseEntity.ok(movieService.getMovieDetail(movieId));
     }
 } 
