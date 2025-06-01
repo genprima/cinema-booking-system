@@ -1,0 +1,30 @@
+package com.gen.cinema.web;
+
+import com.gen.cinema.dto.response.ScheduleDaysResponseDTO;
+import com.gen.cinema.service.ScheduleService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.constraints.NotNull;
+
+@RestController
+@RequestMapping("/v1/schedule")
+@Validated
+public class ScheduleController {
+    private final ScheduleService scheduleService;
+
+    public ScheduleController(ScheduleService scheduleService) {
+        this.scheduleService = scheduleService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ScheduleDaysResponseDTO> getScheduleDays(
+            @RequestParam @NotNull(message = "studioId is required") Long studioId,
+            @RequestParam @NotNull(message = "movieId is required") Long movieId) {
+        return ResponseEntity.ok(scheduleService.getScheduleDays(studioId, movieId));
+    }
+} 

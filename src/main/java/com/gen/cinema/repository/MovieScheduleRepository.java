@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 
 import com.gen.cinema.domain.MovieSchedule;
 import com.gen.cinema.dto.response.MovieResponseDTO;
+import java.sql.Date;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Long> {
@@ -23,4 +26,16 @@ public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Lo
            "WHERE c.cinemaCode = :cinemaCode " +
            "ORDER BY m.title ASC")
     Page<MovieResponseDTO> findDistinctMoviesByCinemaId(@Param("cinemaCode") String cinemaCode, Pageable pageable);
+    
+    @Query("SELECT DISTINCT DATE(ms.startTime) " +
+           "FROM MovieSchedule ms " +
+           "WHERE ms.studio.id = :studioId " +
+           "AND ms.movie.id = :movieId " +
+           "AND ms.startTime >= :startOfToday " +
+           "ORDER BY DATE(ms.startTime) ASC")
+    List<Date> findDistinctScheduleDatesByStudioMovie(
+        @Param("studioId") Long studioId,
+        @Param("movieId") Long movieId,
+        @Param("startOfToday") LocalDateTime startOfToday
+    );
 } 
