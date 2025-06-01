@@ -2,13 +2,17 @@ package com.gen.cinema.service.impl;
 
 import com.gen.cinema.dto.response.ScheduleDayDTO;
 import com.gen.cinema.dto.response.ScheduleDaysResponseDTO;
+import com.gen.cinema.dto.response.ScheduleTimeDTO;
+import com.gen.cinema.dto.response.ScheduleTimesResponseDTO;
 import com.gen.cinema.repository.MovieScheduleRepository;
 import com.gen.cinema.service.ScheduleService;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,5 +41,19 @@ public class ScheduleServiceImpl implements ScheduleService {
             dayDTOs.add(new ScheduleDayDTO(dateStr, label, isToday));
         }
         return new ScheduleDaysResponseDTO(dayDTOs);
+    }
+
+    @Override
+    public ScheduleTimesResponseDTO getScheduleTimes(Long studioId, Long movieId, Long dateEpochMillis) {
+        LocalDate date = Instant.ofEpochMilli(dateEpochMillis).atZone(ZoneId.systemDefault()).toLocalDate();
+        var schedules = movieScheduleRepository.findSchedulesByStudioMovieAndDate(studioId, movieId, date);
+        List<ScheduleTimeDTO> timeDTOs = new ArrayList<>();
+        
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
+        for (var ms : schedules) {
+            String timeStr = ms.getStartTime().format(timeFormatter);
+            timeDTOs.add(new ScheduleTimeDTO(ms.getSecureId().toString(), timeStr));
+        }
+        return new ScheduleTimesResponseDTO(timeDTOs);
     }
 } 
