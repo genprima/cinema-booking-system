@@ -34,6 +34,10 @@ spring:
     repeatable-sql-migration-prefix: R__
     out-of-order: false
 
+  web:
+    resources:
+      add-mappings: false
+
 logging:
   level:
     '[com.nostratech.excentis.configfile]': DEBUG
