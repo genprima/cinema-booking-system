@@ -377,7 +377,7 @@ DECLARE
     time_slots time[] := ARRAY['14:30'::time, '16:45'::time, '19:00'::time, '21:15'::time];
     t time;
 BEGIN
-    FOR d IN 0..1 LOOP  -- Only today and tomorrow
+    FOR d IN 0..3 LOOP
         FOR m_id IN (
             SELECT id FROM movie 
             LIMIT 5  -- Only use 5 movies
@@ -395,7 +395,7 @@ BEGIN
                         gen_random_uuid(),
                         m_id,
                         s_id,
-                        (base_date + d) + INTERVAL '1 day' * d + t,
+                        (base_date + d) + t,
                         50000 + (d * 5000),
                         'SYSTEM',
                         CURRENT_TIMESTAMP,
