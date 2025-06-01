@@ -35,4 +35,12 @@ public class City extends AbstractBaseEntity {
     public void setCityCinemas(Set<CityCinema> cityCinemas) {
         this.cityCinemas = cityCinemas;
     }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 }
