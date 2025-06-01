@@ -1,7 +1,7 @@
 package com.gen.cinema.dto.response;
 
-public record CityResponse(
+public record CityResponseDTO(
     Long id,
     String name,
-    Long version
+    String code
 ) {} 
