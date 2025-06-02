@@ -73,4 +73,16 @@ public class Movie extends AbstractBaseEntity {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public String getDirector() {
+        return director;
+    }
+
+    public void setDirector(String director) {
+        this.director = director;
+    }
+    
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
 }

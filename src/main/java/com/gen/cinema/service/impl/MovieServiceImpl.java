@@ -9,19 +9,26 @@ import com.gen.cinema.dto.response.MovieDetailResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.repository.MovieScheduleRepository;
 import com.gen.cinema.repository.MovieRepository;
+import com.gen.cinema.service.FileService;
 import com.gen.cinema.service.MovieService;
 import com.gen.cinema.util.PaginationUtil;
+
+import jakarta.transaction.Transactional;
+
 import com.gen.cinema.exception.BadRequestAlertException;
+import com.gen.cinema.dto.request.UpdateMovieRequestDTO;
 
 @Service
 public class MovieServiceImpl implements MovieService {
 
     private final MovieScheduleRepository movieScheduleRepository;
     private final MovieRepository movieRepository;
+    private final FileService fileService;
 
-    public MovieServiceImpl(MovieScheduleRepository movieScheduleRepository, MovieRepository movieRepository) {
+    public MovieServiceImpl(MovieScheduleRepository movieScheduleRepository, MovieRepository movieRepository, FileService fileService) {
         this.movieScheduleRepository = movieScheduleRepository;
         this.movieRepository = movieRepository;
+        this.fileService = fileService;
     }
 
     @Override
@@ -38,6 +45,38 @@ public class MovieServiceImpl implements MovieService {
     public MovieDetailResponseDTO getMovieDetail(Long movieId) {
         Movie movie = movieRepository.findById(movieId)
             .orElseThrow(() -> new BadRequestAlertException("Movie not found"));
+            
+        String imageUrl = null;
+        if (movie.getImageUrl() != null) {
+            // Generate a presigned download URL that expires in 1 hour
+            imageUrl = fileService.generatePresignedDownloadUrl(movie.getImageUrl());
+        }
+        
+        return new MovieDetailResponseDTO(
+            movie.getId(),
+            movie.getTitle(),
+            movie.getDescription(),
+            movie.getSynopsis(),
+            movie.getRating(),
+            movie.getDuration(),
+            imageUrl
+        );
+    }
+
+    @Override
+    @Transactional
+    public MovieDetailResponseDTO updateMovie(Long movieId, UpdateMovieRequestDTO request) {
+        Movie movie = movieRepository.findById(movieId)
+            .orElseThrow(() -> new BadRequestAlertException("Movie not found"));
+        
+        movie.setTitle(request.title());
+        movie.setDescription(request.description());
+        movie.setSynopsis(request.synopsis());
+        movie.setRating(request.rating());
+        movie.setDirector(request.director());
+        movie.setDuration(request.duration());
+        movieRepository.save(movie);
+
         return new MovieDetailResponseDTO(
             movie.getId(),
             movie.getTitle(),
@@ -47,5 +86,20 @@ public class MovieServiceImpl implements MovieService {
             movie.getDuration(),
             movie.getImageUrl()
         );
+    }
+
+    @Override
+    @Transactional
+    public void updateMovieImage(Long movieId, String filename) {
+        Movie movie = movieRepository.findById(movieId)
+            .orElseThrow(() -> new BadRequestAlertException("Movie not found"));
+
+        String imageUrl = "movie/" + movieId + "/" + filename;
+        if (!fileService.fileExists(imageUrl)) {
+            throw new BadRequestAlertException("File not found, please reupload the file");
+        }
+        
+        movie.setImageUrl(imageUrl);
+        movieRepository.save(movie);
     }
 } 
