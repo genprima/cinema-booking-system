@@ -42,5 +42,13 @@ logging:
   level:
     '[com.nostratech.excentis.configfile]': DEBUG
     '[org.springframework.security]': DEBUG
+    '[com.gen.cinema]': DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+minio:
+  internal-endpoint: http://minio:9000
+  external-endpoint: http://192.168.100.123:9000
+  access-key: minioadmin
+  secret-key: minioadmin123
+  bucket: cinema-media
