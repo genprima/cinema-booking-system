@@ -2,6 +2,7 @@ package com.gen.cinema.web;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,8 @@ import com.gen.cinema.service.FileService;
 import com.gen.cinema.validation.ValidImageFilename;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
+import com.gen.cinema.util.PaginationUtil;
+import com.gen.cinema.dto.response.MovieListResponseDTO;
 
 @RestController
 @RequestMapping("/v1/movies")
@@ -33,6 +36,18 @@ public class MovieController {
     public MovieController(MovieService movieService, FileService fileService) {
         this.movieService = movieService;
         this.fileService = fileService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ResultPageResponseDTO<MovieListResponseDTO>> getMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String title,
+            @RequestParam(defaultValue = "title") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(PaginationUtil.getDirection(direction), sortBy));
+        return ResponseEntity.ok(movieService.getMovies(title, pageable));
     }
 
     @GetMapping("/cinema/{cinemaCode}")
