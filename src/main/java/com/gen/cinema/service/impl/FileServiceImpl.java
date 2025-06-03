@@ -18,24 +18,16 @@ public class FileServiceImpl implements FileService {
 
     private static final Logger log = LoggerFactory.getLogger(FileServiceImpl.class);
     private final MinioClient minioClient;
-    private final MinioClient presignedUrlClient;
     private final MinioProperties minioProperties;
 
     public FileServiceImpl(MinioProperties minioProperties) {
         this.minioProperties = minioProperties;
-        log.debug("Initializing MinIO clients with internal endpoint: {} and external endpoint: {}", 
-            minioProperties.getInternalEndpoint(), 
-            minioProperties.getExternalEndpoint());
+        log.debug("Initializing MinIO client with endpoint: {}", 
+            minioProperties.getInternalEndpoint());
         
-        // Client for internal operations
+        // Single client using minio:9000
         this.minioClient = MinioClient.builder()
-                .endpoint(minioProperties.getInternalEndpoint())  // Use minio:9000 for internal operations
-                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
-                .build();
-                
-        // Client for generating presigned URLs
-        this.presignedUrlClient = MinioClient.builder()
-                .endpoint(minioProperties.getExternalEndpoint())  // Use IP address for presigned URLs
+                .endpoint(minioProperties.getInternalEndpoint())  // http://minio:9000
                 .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
                 .build();
     }
@@ -44,9 +36,8 @@ public class FileServiceImpl implements FileService {
     public String generatePresignedUploadUrl(String objectPath, long expirySeconds) {
         try {
             log.debug("Generating presigned URL for object: {}", objectPath);
-            log.debug("Using external endpoint: {}", minioProperties.getExternalEndpoint());
             
-            return presignedUrlClient.getPresignedObjectUrl(
+            return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.PUT)
                             .bucket(minioProperties.getBucket())
@@ -63,7 +54,7 @@ public class FileServiceImpl implements FileService {
     @Override
     public String generatePresignedDownloadUrl(String objectPath) {
         try {            
-            return presignedUrlClient.getPresignedObjectUrl(
+            return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(minioProperties.getBucket())
