@@ -224,7 +224,7 @@ VALUES
 -- Studios
 INSERT INTO studio (name, city_cinema_id, studio_layout_id, created_by, created_date, modified_by, modified_date, version)
 SELECT 
-    'Studio ' || studio_letter,
+    studio_name,
     cc.id as city_cinema_id,
     sl.id as studio_layout_id,
     'SYSTEM' as created_by,
@@ -233,9 +233,22 @@ SELECT
     CURRENT_TIMESTAMP as modified_date,
     0 as version
 FROM city_cinema cc
-CROSS JOIN studio_layout sl
-CROSS JOIN (VALUES ('A'), ('B'), ('C')) AS studios(studio_letter)
-ORDER BY cc.id, studio_letter;
+JOIN (
+    SELECT 
+        name as studio_name,
+        CASE name
+            WHEN 'Premiere Hall' THEN 'Layout 10x20'
+            WHEN 'Dolby Atmos' THEN 'Layout 15x30'
+            WHEN 'IMAX' THEN 'Layout 12x25'
+        END as layout_name
+    FROM (VALUES 
+        ('Premiere Hall'),
+        ('Dolby Atmos'),
+        ('IMAX')
+    ) AS studios(name)
+) s ON true
+JOIN studio_layout sl ON sl.name = s.layout_name
+ORDER BY cc.id, studio_name;
 
 -- Movies
 INSERT INTO movie (title, description, duration, synopsis, rating, director, created_by, created_date, modified_by, modified_date, version)

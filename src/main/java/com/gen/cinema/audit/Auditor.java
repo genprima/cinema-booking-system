@@ -3,6 +3,7 @@ package com.gen.cinema.audit;
 import java.util.Optional;
 
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.lang.NonNull;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
+@EnableJpaAuditing
 public class Auditor implements AuditorAware<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(Auditor.class);
@@ -33,7 +35,7 @@ public class Auditor implements AuditorAware<String> {
             if (principal instanceof Principal) {
                 Principal userPrincipal = (Principal) principal;
                 logger.debug("Found Principal - name: {}, userId: {}", userPrincipal.getName(), userPrincipal.getUserId());
-                return Optional.of(userPrincipal.getUserId());
+                return Optional.of(userPrincipal.getUsername());
             } else {
                 logger.warn("Principal is not of type Principal: {}", principal);
                 return Optional.of("SYSTEM");
