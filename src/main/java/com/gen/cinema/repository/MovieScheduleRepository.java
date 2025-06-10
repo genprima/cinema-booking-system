@@ -68,7 +68,8 @@ public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Lo
            "JOIN mss.movieSchedule ms " +
            "JOIN mss.studioSeat ss " +
            "JOIN ss.seat s " +
-           "WHERE ms.secureId = :scheduleId")
+           "WHERE ms.secureId = :scheduleId " +
+           "ORDER BY ss.yCoordinate ASC, ss.xCoordinate ASC")
     List<ScheduleSeatProjection> findScheduleSeatsByScheduleId(@Param("scheduleId") UUID scheduleId);
 
     Optional<MovieSchedule> findBySecureId(UUID secureId);

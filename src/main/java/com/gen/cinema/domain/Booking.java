@@ -3,6 +3,9 @@ package com.gen.cinema.domain;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.gen.cinema.enums.BookingStatus;
 
 import jakarta.persistence.Column;
@@ -11,6 +14,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -42,6 +46,9 @@ public class Booking extends AbstractBaseUUIDEntity {
     @Column(name = "payment_deadline")
     private LocalDateTime paymentDeadline;
 
+    @OneToMany(mappedBy = "booking", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private List<BookingSeat> bookingSeats = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         if (this.bookingCode == null) {
@@ -49,6 +56,24 @@ public class Booking extends AbstractBaseUUIDEntity {
             String userInitial = this.user != null ? this.user.getUsername().substring(0, 1).toUpperCase() : "U";
             this.bookingCode = String.format("BOOK-%s-%s", timestamp, userInitial);
         }
+    }
+
+    public void addBookingSeat(BookingSeat bookingSeat) {
+        bookingSeats.add(bookingSeat);
+        bookingSeat.setBooking(this);
+        updateTotalAmount();
+    }
+
+    public void removeBookingSeat(BookingSeat bookingSeat) {
+        bookingSeats.remove(bookingSeat);
+        bookingSeat.setBooking(null);
+        updateTotalAmount();
+    }
+
+    private void updateTotalAmount() {
+        this.totalAmount = bookingSeats.stream()
+            .map(BookingSeat::getPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public String getBookingCode() {
@@ -105,5 +130,13 @@ public class Booking extends AbstractBaseUUIDEntity {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public List<BookingSeat> getBookingSeats() {
+        return bookingSeats;
+    }
+
+    public void setBookingSeats(List<BookingSeat> bookingSeats) {
+        this.bookingSeats = bookingSeats;
     }
 } 
