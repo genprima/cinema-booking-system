@@ -16,6 +16,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.gen.cinema.domain.MovieSchedule;
+import com.gen.cinema.dto.response.BookingScheduleResponse;
+import com.gen.cinema.dto.response.BookingSeatResponse;
+import com.gen.cinema.exception.BadRequestAlertException;
+import com.gen.cinema.projection.ScheduleSeatProjection;
 
 @Service
 public class ScheduleServiceImpl implements ScheduleService {
@@ -55,5 +63,33 @@ public class ScheduleServiceImpl implements ScheduleService {
             timeDTOs.add(new ScheduleTimeDTO(ms.getSecureId().toString(), timeStr));
         }
         return new ScheduleTimesResponseDTO(timeDTOs);
+    }
+
+    @Override
+    public BookingScheduleResponse getScheduleDetail(String scheduleId) {
+        
+        MovieSchedule schedule = movieScheduleRepository.findBySecureId(UUID.fromString(scheduleId))
+            .orElseThrow(() -> new BadRequestAlertException("Schedule not found with id: " + scheduleId));
+
+        List<ScheduleSeatProjection> seatProjections = movieScheduleRepository.findScheduleSeatsByScheduleId(UUID.fromString(scheduleId));
+        
+        List<BookingSeatResponse> seats = seatProjections.stream()
+            .map(seat -> new BookingSeatResponse(
+                seat.getId().toString(),
+                seat.getRow(),
+                seat.getNumber(),
+                seat.getX(),
+                seat.getY(),
+                seat.getStatus(),
+                seat.getPrice(),
+                seat.getSeatType()
+            ))
+            .collect(Collectors.toList());
+
+        return new BookingScheduleResponse(
+            schedule.getSecureId().toString(),
+            schedule.getStartTime().toString(),
+            seats
+        );
     }
 } 

@@ -9,10 +9,14 @@ import org.springframework.stereotype.Repository;
 
 import com.gen.cinema.domain.MovieSchedule;
 import com.gen.cinema.dto.response.MovieResponseDTO;
+import com.gen.cinema.projection.ScheduleSeatProjection;
+
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Long> {
@@ -50,4 +54,22 @@ public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Lo
         @Param("movieId") Long movieId,
         @Param("date") LocalDate date
     );
+
+    @Query("SELECT " +
+           "mss.secureId as id, " +
+           "ss.row as row, " +
+           "ss.number as number, " +
+           "ss.xCoordinate as x, " +
+           "ss.yCoordinate as y, " +
+           "mss.status as status, " +
+           "ms.price + s.additionalPrice as price, " +
+           "s.seatType as seatType " +
+           "FROM MovieScheduleSeat mss " +
+           "JOIN mss.movieSchedule ms " +
+           "JOIN mss.studioSeat ss " +
+           "JOIN ss.seat s " +
+           "WHERE ms.secureId = :scheduleId")
+    List<ScheduleSeatProjection> findScheduleSeatsByScheduleId(@Param("scheduleId") UUID scheduleId);
+
+    Optional<MovieSchedule> findBySecureId(UUID secureId);
 } 
