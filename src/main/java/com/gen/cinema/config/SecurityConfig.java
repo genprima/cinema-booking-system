@@ -22,9 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gen.cinema.security.CustomAuthenticationEntryPoint;
 import com.gen.cinema.security.CustomAccessDeniedHandler;
 import com.gen.cinema.security.filter.EmailAuthenticationFilter;
+import com.gen.cinema.security.filter.OtpAuthenticationFilter;
 import com.gen.cinema.security.handler.EmailAuthenticationFailureHandler;
 import com.gen.cinema.security.handler.EmailAuthenticationSuccessHandler;
 import com.gen.cinema.security.provider.EmailAuthenticationProvider;
+import com.gen.cinema.security.provider.OtpAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.ProviderManager;
 
@@ -37,6 +39,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String AUTH_URL = "/v1/auth/login";
+    private static final String OTP_VERIFY_URL = "/v1/auth/verify-otp";
     private static final String V1_URL = "/v1/**";
     private static final List<String> ALLOWED_ORIGINS = Arrays.asList("http://localhost:3000", "http://localhost:8080");
     private static final List<String> ALLOWED_METHODS = Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS");
@@ -46,16 +49,19 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final TimeZoneFilter timeZoneFilter;
     private final EmailAuthenticationProvider emailAuthenticationProvider;
+    private final OtpAuthenticationProvider otpAuthenticationProvider;
     
     public SecurityConfig(
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
             CustomAccessDeniedHandler customAccessDeniedHandler,
             TimeZoneFilter timeZoneFilter,
-            EmailAuthenticationProvider emailAuthenticationProvider) {
+            EmailAuthenticationProvider emailAuthenticationProvider,
+            OtpAuthenticationProvider otpAuthenticationProvider) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.timeZoneFilter = timeZoneFilter;
         this.emailAuthenticationProvider = emailAuthenticationProvider;
+        this.otpAuthenticationProvider = otpAuthenticationProvider;
     }
 
     @Bean
@@ -81,6 +87,15 @@ public class SecurityConfig {
         return new EmailAuthenticationFilter(AUTH_URL, authenticationManager, successHandler, failureHandler, objectMapper);
     }
 
+    @Bean
+    public OtpAuthenticationFilter otpAuthenticationFilter(
+            AuthenticationManager authenticationManager,
+            @Qualifier("UsernamePasswordAuthFailureHandler") AuthenticationSuccessHandler successHandler,
+            @Qualifier("UsernamePasswordAuthFailureHandler") AuthenticationFailureHandler failureHandler,
+            ObjectMapper objectMapper) {
+        return new OtpAuthenticationFilter(authenticationManager, successHandler, failureHandler, objectMapper);
+    }
+
     @Bean("emailAuthenticationSuccessHandler")
     public AuthenticationSuccessHandler emailAuthenticationSuccessHandler() {
         return new EmailAuthenticationSuccessHandler();
@@ -95,6 +110,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
         ((ProviderManager) authenticationManager).getProviders().add(emailAuthenticationProvider);
+        ((ProviderManager) authenticationManager).getProviders().add(otpAuthenticationProvider);
         return authenticationManager;
     }
 
@@ -106,7 +122,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            EmailAuthenticationFilter emailAuthenticationFilter) throws Exception {
+            EmailAuthenticationFilter emailAuthenticationFilter,
+            OtpAuthenticationFilter otpAuthenticationFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -114,12 +131,13 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(timeZoneFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(emailAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(otpAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(AUTH_URL).permitAll()
+                .requestMatchers(AUTH_URL, OTP_VERIFY_URL).permitAll()
                 .requestMatchers(V1_URL).authenticated()
                 .anyRequest().authenticated()
             );
