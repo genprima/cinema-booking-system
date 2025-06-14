@@ -24,12 +24,12 @@ public class MovieScheduleSeat extends AbstractBaseUUIDEntity {
     @JoinColumn(name = "studio_seat_id", nullable = false)
     private StudioSeat studioSeat;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
     private SeatStatus status = SeatStatus.AVAILABLE;
 
-    @Column(name = "price_adjustment")
-    private BigDecimal priceAdjustment;
+    @Column(name = "additional_price", nullable = false)
+    private BigDecimal additionalPrice;
 
     public MovieSchedule getMovieSchedule() {
         return movieSchedule;
@@ -55,11 +55,15 @@ public class MovieScheduleSeat extends AbstractBaseUUIDEntity {
         this.status = status;
     }
 
-    public BigDecimal getPriceAdjustment() {
-        return priceAdjustment;
+    public BigDecimal getTotalPrice() {
+        return movieSchedule.getPrice().add(additionalPrice);
     }
 
-    public void setPriceAdjustment(BigDecimal priceAdjustment) {
-        this.priceAdjustment = priceAdjustment;
+    public void setAdditionalPrice(BigDecimal additionalPrice) {
+        this.additionalPrice = additionalPrice;
+    }
+
+    public BigDecimal getAdditionalPrice() {
+        return additionalPrice;
     }
 } 

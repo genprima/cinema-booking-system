@@ -18,6 +18,9 @@ public class User extends AbstractBaseUUIDEntity {
     @Column(name = "username", nullable = false, unique = true)
     private String username;
 
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -37,6 +40,14 @@ public class User extends AbstractBaseUUIDEntity {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {

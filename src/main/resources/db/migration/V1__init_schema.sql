@@ -275,10 +275,10 @@ VALUES
 ('The Good, the Bad and the Ugly', 'A bounty hunting scam joins two men in an uneasy alliance', 161, 'Three gunslingers compete to find a fortune in buried Confederate gold.', 'R', 'Sergio Leone', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0);
 
 -- Insert seat types
-INSERT INTO seat (seat_type, additional_price, created_by, created_date, modified_by, modified_date, version)
+INSERT INTO seat (seat_type, created_by, created_date, modified_by, modified_date, version)
 VALUES 
-('REGULAR', 0, 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('COMFORT', 50000, 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0);
+('REGULAR', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('COMFORT', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0);
 
 -- Insert studio seats for each studio
 -- For studios with Layout 10x20
@@ -286,8 +286,8 @@ INSERT INTO studio_seat (studio_id, seat_id, row, number, x_coordinate, y_coordi
 SELECT 
     s.id as studio_id,
     CASE 
-        WHEN row_num < 5 THEN 1  -- First 5 rows are REGULAR
-        ELSE 2                   -- Last 5 rows are COMFORT
+        WHEN row_num < 5 THEN (SELECT id FROM seat WHERE seat_type = 'REGULAR')
+        ELSE (SELECT id FROM seat WHERE seat_type = 'COMFORT')
     END as seat_id,
     CASE 
         WHEN row_num < 26 THEN CHR(65 + row_num)
@@ -409,7 +409,12 @@ BEGIN
                         m_id,
                         s_id,
                         (base_date + d) + t,
-                        50000 + (d * 5000),
+                        CASE 
+                            -- Morning/Afternoon shows (14:30, 16:45) - Regular price
+                            WHEN t IN ('14:30'::time, '16:45'::time) THEN 50000 + (d * 5000)
+                            -- Evening shows (19:00, 21:15) - Premium price
+                            ELSE 75000 + (d * 5000)
+                        END,
                         'SYSTEM',
                         CURRENT_TIMESTAMP,
                         'SYSTEM',
@@ -441,7 +446,14 @@ BEGIN
         ms.id as movie_schedule_id,
         ss.id as studio_seat_id,
         'AVAILABLE' as status,
-        0.0 as price_adjustment,
+        CASE 
+            -- Regular seats (first few rows)
+            WHEN ss.row IN ('A', 'B', 'C', 'D', 'E') THEN 0
+            -- Comfort seats (middle rows)
+            WHEN ss.row IN ('F', 'G', 'H', 'I', 'J') THEN 25000
+            -- Premium seats (back rows)
+            ELSE 50000
+        END as additional_price,
         'SYSTEM' as created_by,
         CURRENT_TIMESTAMP as created_date,
         'SYSTEM' as modified_by,
@@ -471,7 +483,7 @@ BEGIN
             movie_schedule_id, 
             studio_seat_id, 
             status, 
-            price_adjustment, 
+            additional_price, 
             created_by, 
             created_date, 
             modified_by, 
@@ -494,26 +506,26 @@ BEGIN
 END $$;
 
 -- User
-INSERT INTO "users" (secure_id, username, password, address, role, created_by, created_date, modified_by, modified_date, version)
+INSERT INTO "users" (secure_id, username, email, password, address, role, created_by, created_date, modified_by, modified_date, version)
 VALUES 
-('550e8400-e29b-41d4-a716-446655440000', 'gen', 'password', 'Jakarta, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440001', 'admin', 'password', 'Jakarta, Indonesia', 'ADMIN', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440002', 'admin2', 'password', 'Bandung, Indonesia', 'ADMIN', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440003', 'john_doe', 'password', 'Surabaya, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440004', 'jane_smith', 'password', 'Medan, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440005', 'bob_wilson', 'password', 'Semarang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440006', 'alice_brown', 'password', 'Yogyakarta, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440007', 'charlie_davis', 'password', 'Malang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440008', 'emma_taylor', 'password', 'Palembang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440009', 'michael_johnson', 'password', 'Makassar, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440010', 'sarah_miller', 'password', 'Denpasar, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440011', 'david_anderson', 'password', 'Manado, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440012', 'lisa_thomas', 'password', 'Balikpapan, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440013', 'james_white', 'password', 'Padang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440014', 'mary_jackson', 'password', 'Pekanbaru, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440015', 'robert_harris', 'password', 'Banjarmasin, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440016', 'patricia_martin', 'password', 'Pontianak, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440017', 'william_thompson', 'password', 'Samarinda, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440018', 'elizabeth_garcia', 'password', 'Jayapura, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440019', 'richard_martinez', 'password', 'Ambon, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
-('550e8400-e29b-41d4-a716-446655440020', 'jennifer_robinson', 'password', 'Mataram, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0); 
+('550e8400-e29b-41d4-a716-446655440000', 'gen', 'genbiocakti@gmail.com', 'password', 'Jakarta, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440001', 'admin', 'admin@gmail.com', 'password', 'Jakarta, Indonesia', 'ADMIN', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440002', 'admin2', 'admin2@gmail.com', 'password', 'Bandung, Indonesia', 'ADMIN', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440003', 'john_doe', 'john_doe@gmail.com', 'password', 'Surabaya, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440004', 'jane_smith', 'jane_smith@gmail.com', 'password', 'Medan, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440005', 'bob_wilson', 'bob_wilson@gmail.com', 'password', 'Semarang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440006', 'alice_brown', 'alice_brown@gmail.com', 'password', 'Yogyakarta, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440007', 'charlie_davis', 'charlie_davis@gmail.com', 'password', 'Malang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440008', 'emma_taylor', 'emma_taylor@gmail.com', 'password', 'Palembang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440009', 'michael_johnson', 'michael_johnson@gmail.com', 'password', 'Makassar, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440010', 'sarah_miller', 'sarah_miller@gmail.com', 'password', 'Denpasar, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440011', 'david_anderson', 'david_anderson@gmail.com', 'password', 'Manado, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440012', 'lisa_thomas', 'lisa_thomas@gmail.com', 'password', 'Balikpapan, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440013', 'james_white', 'james_white@gmail.com', 'password', 'Padang, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440014', 'mary_jackson', 'mary_jackson@gmail.com', 'password', 'Pekanbaru, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440015', 'robert_harris', 'robert_harris@gmail.com', 'password', 'Banjarmasin, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440016', 'patricia_martin', 'patricia_martin@gmail.com', 'password', 'Pontianak, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440017', 'william_thompson', 'william_thompson@gmail.com', 'password', 'Samarinda, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440018', 'elizabeth_garcia', 'elizabeth_garcia@gmail.com', 'password', 'Jayapura, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440019', 'richard_martinez', 'richard_martinez@gmail.com', 'password', 'Ambon, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0),
+('550e8400-e29b-41d4-a716-446655440020', 'jennifer_robinson', 'jennifer_robinson@gmail.com', 'password', 'Mataram, Indonesia', 'USER', 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP, 0); 

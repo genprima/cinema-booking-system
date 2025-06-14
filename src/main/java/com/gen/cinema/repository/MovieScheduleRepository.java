@@ -62,7 +62,7 @@ public interface MovieScheduleRepository extends JpaRepository<MovieSchedule, Lo
            "ss.xCoordinate as x, " +
            "ss.yCoordinate as y, " +
            "mss.status as status, " +
-           "ms.price + s.additionalPrice as price, " +
+           "ms.price + mss.additionalPrice as price, " +
            "s.seatType as seatType " +
            "FROM MovieScheduleSeat mss " +
            "JOIN mss.movieSchedule ms " +
