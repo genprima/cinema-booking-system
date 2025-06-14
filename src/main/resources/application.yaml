@@ -5,7 +5,7 @@ spring:
     active: default
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/cinema_booking_system
+    url: jdbc:postgresql://localhost:5433/cinema_booking_system
     username: gen
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -51,3 +51,15 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin123
   bucket: cinema-media
+
+mail:
+  smtp:
+    auth: true
+    starttls:
+      enable: true
+    host: sandbox.smtp.mailtrap.io
+    port: 465
+    ssl:
+      trust: sandbox.smtp.mailtrap.io
+  username: 10d6a47ba0d890
+  password: 1ad49dba18e691
