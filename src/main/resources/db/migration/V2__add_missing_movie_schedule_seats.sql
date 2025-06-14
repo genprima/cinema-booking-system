@@ -1,11 +1,11 @@
 -- Add missing movie schedule seats for schedules created in the DO block
-INSERT INTO movie_schedule_seat (secure_id, movie_schedule_id, studio_seat_id, status, price_adjustment, created_by, created_date, modified_by, modified_date, version)
+INSERT INTO movie_schedule_seat (secure_id, movie_schedule_id, studio_seat_id, status, additional_price, created_by, created_date, modified_by, modified_date, version)
 SELECT 
     gen_random_uuid() as secure_id,
     ms.id as movie_schedule_id,
     ss.id as studio_seat_id,
     'AVAILABLE' as status,
-    0.0 as price_adjustment,
+    0.0 as additional_price,
     'SYSTEM' as created_by,
     CURRENT_TIMESTAMP as created_date,
     'SYSTEM' as modified_by,

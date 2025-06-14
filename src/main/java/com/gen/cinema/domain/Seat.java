@@ -1,7 +1,5 @@
 package com.gen.cinema.domain;
 
-import java.math.BigDecimal;
-
 import com.gen.cinema.enums.SeatType;
 
 import jakarta.persistence.Column;
@@ -18,9 +16,6 @@ public class Seat extends AbstractBaseEntity {
     @Enumerated(EnumType.STRING)
     private SeatType seatType;
 
-    @Column(name = "additional_price", nullable = false)
-    private BigDecimal additionalPrice = BigDecimal.ZERO;
-
     public SeatType getSeatType() {
         return seatType;
     }
@@ -29,11 +24,4 @@ public class Seat extends AbstractBaseEntity {
         this.seatType = seatType;
     }
 
-    public BigDecimal getAdditionalPrice() {
-        return additionalPrice;
-    }
-
-    public void setAdditionalPrice(BigDecimal additionalPrice) {
-        this.additionalPrice = additionalPrice;
-    }   
 }
