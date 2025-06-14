@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -16,12 +15,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@Component
-public class UsernamePasswordAuthFailureHandler implements AuthenticationFailureHandler{
+public class AuthFailureHandler implements AuthenticationFailureHandler {
 
     private final ObjectMapper objectMapper;
 
-    public UsernamePasswordAuthFailureHandler(ObjectMapper objectMapper) {
+    public AuthFailureHandler(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -30,7 +28,7 @@ public class UsernamePasswordAuthFailureHandler implements AuthenticationFailure
             AuthenticationException exception) throws IOException, ServletException {
         Map<String, String> resultmap = new HashMap<>();
         resultmap.put("error", "Authentication Failed");
-        resultmap.put("message", "Invalid credentials");
+        resultmap.put("message", exception.getMessage());
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getWriter(), resultmap);

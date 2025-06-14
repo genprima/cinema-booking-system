@@ -44,20 +44,14 @@ public class WebConfig {
 
     @Bean
     public Session mailSession1(){
-        Session session = Session.getInstance(getProperties(), new Authenticator() {
+        return Session.getInstance(getProperties(), new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return passwordAuthentication1();
+                return new PasswordAuthentication(
+                    emailConfig.getUsername(),
+                    emailConfig.getPassword()
+                );
             }
         });
-        return session;
-    }
-
-    @Bean
-    public PasswordAuthentication passwordAuthentication1(){
-        return new PasswordAuthentication(
-            emailConfig.getUsername(),
-            emailConfig.getPassword()
-        );
     }
 } 

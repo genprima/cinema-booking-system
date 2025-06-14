@@ -1,6 +1,5 @@
 package com.gen.cinema.security.filter;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
@@ -14,8 +13,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gen.cinema.dto.request.EmailLoginRequest;
-import com.gen.cinema.security.authentication.EmailAuthenticationToken;
+import com.gen.cinema.dto.request.OtpVerificationRequest;
+import com.gen.cinema.security.authentication.OtpAuthenticationToken;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,13 +23,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
     private final ObjectMapper objectMapper;
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
 
-    public EmailAuthenticationFilter(
+    public OtpAuthenticationFilter(
             String defaultFilterProcessesUrl,
             AuthenticationManager authenticationManager,
             AuthenticationSuccessHandler successHandler,
@@ -47,28 +46,31 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
         try {
-            // Read the request body using BufferedReader
-            BufferedReader reader = request.getReader();
-            String requestBody = reader.lines().collect(Collectors.joining());
-            
-            log.debug("Received login request body: [{}]", requestBody);
+            String requestBody = request.getReader().lines().collect(Collectors.joining());
+            log.debug("Received OTP verification request body: [{}]", requestBody);
 
             if (requestBody == null || requestBody.trim().isEmpty()) {
                 log.error("Empty request body received");
                 throw new BadCredentialsException("Request body is empty");
             }
 
-            EmailLoginRequest loginRequest = objectMapper.readValue(requestBody, EmailLoginRequest.class);
-            log.debug("Parsed login request: {}", loginRequest);
+            OtpVerificationRequest verificationRequest = objectMapper.readValue(requestBody, OtpVerificationRequest.class);
 
-            if (loginRequest.getEmail() == null || loginRequest.getEmail().trim().isEmpty()) {
+            if (verificationRequest.getEmail() == null || verificationRequest.getEmail().trim().isEmpty()) {
                 throw new BadCredentialsException("Email is required");
             }
 
-            EmailAuthenticationToken authRequest = new EmailAuthenticationToken(loginRequest.getEmail().trim());
+            if (verificationRequest.getOtp() == null || verificationRequest.getOtp().trim().isEmpty()) {
+                throw new BadCredentialsException("OTP is required");
+            }
+
+            OtpAuthenticationToken authRequest = new OtpAuthenticationToken(
+                verificationRequest.getEmail().trim(),
+                verificationRequest.getOtp().trim()
+            );
             return this.getAuthenticationManager().authenticate(authRequest);
         } catch (IOException e) {
-            log.error("Error processing authentication request", e);
+            log.error("Error processing OTP verification request", e);
             throw new BadCredentialsException("Invalid request format");
         }
     }
@@ -84,4 +86,4 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
             AuthenticationException failed) throws IOException, ServletException {
         failureHandler.onAuthenticationFailure(request, response, failed);
     }
-}
+} 
