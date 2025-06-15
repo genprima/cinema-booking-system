@@ -1,12 +1,8 @@
 package com.gen.cinema.audit;
 
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.gen.cinema.enums.UserRole;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,14 +12,15 @@ public class Principal implements UserDetails {
 
     private String name;
 
+    private String email;
+
     private String password;
 
     private List<GrantedAuthority> authorities;
 
-    public Principal(String name, UserRole role) {
+    public Principal(String name, List<GrantedAuthority> authorities) {
         this.name = name;
-        this.authorities = new ArrayList<>();
-        this.authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        this.authorities = authorities;
     }
 
     @Override
@@ -93,5 +90,13 @@ public class Principal implements UserDetails {
 
     public void setAuthorities(List<GrantedAuthority> authorities) {
         this.authorities = authorities;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

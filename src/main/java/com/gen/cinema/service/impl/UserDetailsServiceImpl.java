@@ -3,11 +3,13 @@ package com.gen.cinema.service.impl;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import com.gen.cinema.audit.Principal;
 import com.gen.cinema.domain.User;
 import com.gen.cinema.repository.UserRepository;
+import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -20,10 +22,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByEmail(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         
-        Principal principal = new Principal(username, user.getRole());
+        Principal principal = new Principal(username, List.of(new SimpleGrantedAuthority(user.getRole().name())));
         principal.setUserId(user.getSecureId().toString());
         principal.setPassword(user.getPassword());
         return principal;

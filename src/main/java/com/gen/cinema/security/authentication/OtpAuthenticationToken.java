@@ -1,13 +1,14 @@
 package com.gen.cinema.security.authentication;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import com.gen.cinema.domain.User;
+import org.springframework.security.core.GrantedAuthority;
+import java.util.Collection;
 
 public class OtpAuthenticationToken extends AbstractAuthenticationToken {
 
     private final String email;
     private final String otp;
-    private User principal;
+    private Object principal;
 
     public OtpAuthenticationToken(String email, String otp) {
         super(null);
@@ -16,9 +17,9 @@ public class OtpAuthenticationToken extends AbstractAuthenticationToken {
         setAuthenticated(false);
     }
 
-    public OtpAuthenticationToken(User principal) {
-        super(null);
-        this.email = principal.getEmail();
+    public OtpAuthenticationToken(Object principal, Collection<? extends GrantedAuthority> authorities) {
+        super(authorities);
+        this.email = null;
         this.otp = null;
         this.principal = principal;
         setAuthenticated(true);

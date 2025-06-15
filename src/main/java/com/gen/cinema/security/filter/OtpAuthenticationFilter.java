@@ -1,9 +1,9 @@
 package com.gen.cinema.security.filter;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -11,7 +11,6 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gen.cinema.dto.request.OtpVerificationRequest;
 import com.gen.cinema.security.authentication.OtpAuthenticationToken;
@@ -31,13 +30,11 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
 
     public OtpAuthenticationFilter(
             String defaultFilterProcessesUrl,
-            AuthenticationManager authenticationManager,
             AuthenticationSuccessHandler successHandler,
             AuthenticationFailureHandler failureHandler,
             ObjectMapper objectMapper) {
         super(new AntPathRequestMatcher(defaultFilterProcessesUrl, "POST"));
         this.objectMapper = objectMapper;
-        this.setAuthenticationManager(authenticationManager);
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
     }
@@ -45,30 +42,38 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
+        // Check if this request has already been processed
+        if (request.getAttribute("OTP_AUTH_PROCESSED") != null) {
+            return null;
+        }
+        
         try {
-            String requestBody = request.getReader().lines().collect(Collectors.joining());
-            log.debug("Received OTP verification request body: [{}]", requestBody);
+            request.setAttribute("OTP_AUTH_PROCESSED", true);
+
+            BufferedReader reader = request.getReader();
+            String requestBody = reader.lines().collect(Collectors.joining());
 
             if (requestBody == null || requestBody.trim().isEmpty()) {
-                log.error("Empty request body received");
                 throw new BadCredentialsException("Request body is empty");
             }
 
-            OtpVerificationRequest verificationRequest = objectMapper.readValue(requestBody, OtpVerificationRequest.class);
+            OtpVerificationRequest verificationRequest = objectMapper
+                    .readValue(requestBody, OtpVerificationRequest.class);
 
-            if (verificationRequest.getEmail() == null || verificationRequest.getEmail().trim().isEmpty()) {
-                throw new BadCredentialsException("Email is required");
+            if (verificationRequest.email() == null || verificationRequest.email().isEmpty()) {
+                throw new BadCredentialsException("Invalid email or OTP");
             }
 
-            if (verificationRequest.getOtp() == null || verificationRequest.getOtp().trim().isEmpty()) {
-                throw new BadCredentialsException("OTP is required");
+            if (verificationRequest.otp() == null || verificationRequest.otp().isEmpty()) {
+                throw new BadCredentialsException("Invalid email or OTP");
             }
 
             OtpAuthenticationToken authRequest = new OtpAuthenticationToken(
-                verificationRequest.getEmail().trim(),
-                verificationRequest.getOtp().trim()
-            );
+                    verificationRequest.email(),
+                    verificationRequest.otp());
+            
             return this.getAuthenticationManager().authenticate(authRequest);
+
         } catch (IOException e) {
             log.error("Error processing OTP verification request", e);
             throw new BadCredentialsException("Invalid request format");
@@ -79,11 +84,13 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
             Authentication authResult) throws IOException, ServletException {
         successHandler.onAuthenticationSuccess(request, response, authResult);
+        return;
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
         failureHandler.onAuthenticationFailure(request, response, failed);
+        return;
     }
-} 
+}

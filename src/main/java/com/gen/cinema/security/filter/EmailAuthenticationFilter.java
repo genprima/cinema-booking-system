@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -32,13 +31,11 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
 
     public EmailAuthenticationFilter(
             String defaultFilterProcessesUrl,
-            AuthenticationManager authenticationManager,
             AuthenticationSuccessHandler successHandler,
             AuthenticationFailureHandler failureHandler,
             ObjectMapper objectMapper) {
         super(new AntPathRequestMatcher(defaultFilterProcessesUrl, "POST"));
         this.objectMapper = objectMapper;
-        this.setAuthenticationManager(authenticationManager);
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
     }
@@ -47,25 +44,22 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
         try {
-            // Read the request body using BufferedReader
+
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
             
-            log.debug("Received login request body: [{}]", requestBody);
-
             if (requestBody == null || requestBody.trim().isEmpty()) {
                 log.error("Empty request body received");
                 throw new BadCredentialsException("Request body is empty");
             }
 
             EmailLoginRequest loginRequest = objectMapper.readValue(requestBody, EmailLoginRequest.class);
-            log.debug("Parsed login request: {}", loginRequest);
 
-            if (loginRequest.getEmail() == null || loginRequest.getEmail().trim().isEmpty()) {
+            if (loginRequest.email() == null || loginRequest.email().trim().isEmpty()) {
                 throw new BadCredentialsException("Email is required");
             }
 
-            EmailAuthenticationToken authRequest = new EmailAuthenticationToken(loginRequest.getEmail().trim());
+            EmailAuthenticationToken authRequest = new EmailAuthenticationToken(loginRequest.email());
             return this.getAuthenticationManager().authenticate(authRequest);
         } catch (IOException e) {
             log.error("Error processing authentication request", e);

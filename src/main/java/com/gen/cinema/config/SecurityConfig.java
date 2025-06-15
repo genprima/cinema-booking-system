@@ -21,11 +21,16 @@ import com.gen.cinema.security.CustomAuthenticationEntryPoint;
 import com.gen.cinema.security.CustomAccessDeniedHandler;
 import com.gen.cinema.security.filter.EmailAuthenticationFilter;
 import com.gen.cinema.security.filter.OtpAuthenticationFilter;
+import com.gen.cinema.security.filter.JwtTokenAuthenticationProcessingFilter;
 import com.gen.cinema.security.handler.EmailAuthenticationSuccessHandler;
 import com.gen.cinema.security.handler.OtpSuccessHandler;
 import com.gen.cinema.security.handler.AuthFailureHandler;
 import com.gen.cinema.security.provider.EmailAuthenticationProvider;
 import com.gen.cinema.security.provider.OtpAuthenticationProvider;
+import com.gen.cinema.security.provider.JwtAuthenticationProvider;
+import com.gen.cinema.security.util.JwtTokenFactory;
+import com.gen.cinema.security.util.JwtHeaderTokenExtractor;
+import com.gen.cinema.security.util.SkipPathRequestMatcher;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.ProviderManager;
@@ -39,43 +44,49 @@ import java.util.List;
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
+    private final JwtTokenFactory jwtTokenFactory;
+    private final JwtHeaderTokenExtractor tokenExtractor;
+    private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
     private static final String AUTH_URL = "/v1/auth/login";
     private static final String OTP_URL = "/v1/auth/verify-otp";
     private static final String V1_URL = "/v1/**";
-
-    private static final List<String> ALLOWED_ORIGINS = Arrays.asList("http://localhost:3000", "http://localhost:8080");
-    private static final List<String> ALLOWED_METHODS = Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS");
-    private static final List<String> ALLOWED_HEADERS = Arrays.asList("Authorization", "Content-Type", "X-Requested-With");
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final TimeZoneFilter timeZoneFilter;
     private final EmailAuthenticationProvider emailAuthenticationProvider;
     private final OtpAuthenticationProvider otpAuthenticationProvider;
-    
+
     public SecurityConfig(
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
             CustomAccessDeniedHandler customAccessDeniedHandler,
             TimeZoneFilter timeZoneFilter,
             EmailAuthenticationProvider emailAuthenticationProvider,
-            OtpAuthenticationProvider otpAuthenticationProvider, ObjectMapper objectMapper) {
+            OtpAuthenticationProvider otpAuthenticationProvider,
+            ObjectMapper objectMapper,
+            JwtTokenFactory jwtTokenFactory,
+            JwtHeaderTokenExtractor tokenExtractor,
+            JwtAuthenticationProvider jwtAuthenticationProvider) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.timeZoneFilter = timeZoneFilter;
         this.emailAuthenticationProvider = emailAuthenticationProvider;
         this.otpAuthenticationProvider = otpAuthenticationProvider;
         this.objectMapper = objectMapper;
+        this.jwtTokenFactory = jwtTokenFactory;
+        this.tokenExtractor = tokenExtractor;
+        this.jwtAuthenticationProvider = jwtAuthenticationProvider;
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(ALLOWED_ORIGINS);
-        configuration.setAllowedMethods(ALLOWED_METHODS);
-        configuration.setAllowedHeaders(ALLOWED_HEADERS);
+        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // 1 hour
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -84,7 +95,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationSuccessHandler otpSuccessHandler() {
-        return new OtpSuccessHandler(objectMapper);
+        return new OtpSuccessHandler(objectMapper, jwtTokenFactory);
     }
 
     @Bean
@@ -96,6 +107,16 @@ public class SecurityConfig {
     public AuthenticationFailureHandler authFailureHandler() {
         return new AuthFailureHandler(objectMapper);
     }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
+        AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
+        ((ProviderManager) authenticationManager).getProviders().add(emailAuthenticationProvider);
+        ((ProviderManager) authenticationManager).getProviders().add(otpAuthenticationProvider);
+        ((ProviderManager) authenticationManager).getProviders().add(jwtAuthenticationProvider);
+        return authenticationManager;
+    }
     
 
     @Bean
@@ -104,7 +125,10 @@ public class SecurityConfig {
             @Qualifier("emailAuthenticationSuccessHandler") AuthenticationSuccessHandler successHandler,
             @Qualifier("authFailureHandler") AuthenticationFailureHandler failureHandler,
             ObjectMapper objectMapper) {
-        return new EmailAuthenticationFilter(AUTH_URL, authenticationManager, successHandler, failureHandler, objectMapper);
+        EmailAuthenticationFilter emailAuthenticationFilter = new EmailAuthenticationFilter(AUTH_URL, successHandler, failureHandler,
+                objectMapper);
+        emailAuthenticationFilter.setAuthenticationManager(authenticationManager);
+        return emailAuthenticationFilter;
     }
 
     @Bean
@@ -113,40 +137,50 @@ public class SecurityConfig {
             @Qualifier("otpSuccessHandler") AuthenticationSuccessHandler successHandler,
             @Qualifier("authFailureHandler") AuthenticationFailureHandler failureHandler,
             ObjectMapper objectMapper) {
-        return new OtpAuthenticationFilter(OTP_URL, authenticationManager, successHandler, failureHandler, objectMapper);
+        OtpAuthenticationFilter otpAuthenticationFilter = new OtpAuthenticationFilter(OTP_URL, successHandler, failureHandler,
+                objectMapper);
+        otpAuthenticationFilter.setAuthenticationManager(authenticationManager);
+        return otpAuthenticationFilter;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
-        ((ProviderManager) authenticationManager).getProviders().add(emailAuthenticationProvider);
-        ((ProviderManager) authenticationManager).getProviders().add(otpAuthenticationProvider);
-        return authenticationManager;
+    public JwtTokenAuthenticationProcessingFilter jwtTokenAuthenticationProcessingFilter(
+            AuthenticationManager authenticationManager,
+            AuthenticationFailureHandler failureHandler) {
+        List<String> pathsToSkip = Arrays.asList(AUTH_URL, OTP_URL);
+        SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, V1_URL);
+        JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(
+                failureHandler, tokenExtractor, matcher);
+        filter.setAuthenticationManager(authenticationManager);
+        return filter;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             EmailAuthenticationFilter emailAuthenticationFilter,
-            OtpAuthenticationFilter otpAuthenticationFilter) throws Exception {
+            OtpAuthenticationFilter otpAuthenticationFilter,
+            JwtTokenAuthenticationProcessingFilter jwtTokenAuthenticationProcessingFilter) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(timeZoneFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(emailAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(otpAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(exceptionHandling -> exceptionHandling
-                .authenticationEntryPoint(customAuthenticationEntryPoint)
-                .accessDeniedHandler(customAccessDeniedHandler)
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(AUTH_URL, OTP_URL).permitAll()
-                .requestMatchers(V1_URL).authenticated()
-                .anyRequest().authenticated()
-            );
-        
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(timeZoneFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(otpAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(emailAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtTokenAuthenticationProcessingFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(AUTH_URL, OTP_URL).permitAll()
+                        .requestMatchers(V1_URL).authenticated()
+                        .anyRequest().authenticated())
+                .securityMatcher(V1_URL)
+                .anonymous(anonymous -> anonymous
+                        .disable());
+
         return http.build();
     }
-} 
+}
