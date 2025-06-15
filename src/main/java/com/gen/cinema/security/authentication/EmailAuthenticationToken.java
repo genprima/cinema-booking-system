@@ -12,10 +12,10 @@ public class EmailAuthenticationToken extends AbstractAuthenticationToken {
         this.setAuthenticated(false);
     }
 
-    public EmailAuthenticationToken(Object principal) {
+    public EmailAuthenticationToken(Object principal, String email) {
         super(null);
         this.principal = principal;
-        this.email = null;
+        this.email = email;
         this.setAuthenticated(true);
     }
 

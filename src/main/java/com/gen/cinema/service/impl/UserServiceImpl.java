@@ -20,7 +20,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username)
+        return userRepository.findByEmail(username)
             .orElseThrow(() -> new BadRequestAlertException("User not found"));
     }
 } 

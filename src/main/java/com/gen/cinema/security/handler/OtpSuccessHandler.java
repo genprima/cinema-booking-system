@@ -32,25 +32,31 @@ public class OtpSuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
-        log.debug("OtpSuccessHandler called with authentication: {}", authentication);
+        log.info("OtpSuccessHandler called with authentication: {}", authentication);
         OtpAuthenticationToken authToken = (OtpAuthenticationToken) authentication;
         User user = (User) authToken.getPrincipal();
-        log.debug("User from authentication: {}", user);
+        log.info("User from authentication: {}", user);
         
-        String token = tokenFactory.createAccessJwtToken(user, authToken.getAuthorities()).getToken();
-        log.debug("Generated JWT token: {}", token);
+        try {
+            String token = tokenFactory.createAccessJwtToken(user, authToken.getAuthorities()).getToken();
+            log.info("Generated JWT token: {}", token);
 
-        Map<String, String> resultmap = new HashMap<>();
-        resultmap.put("status", "success");
-        resultmap.put("message", "Authentication successful");
-        resultmap.put("token", token);
-        resultmap.put("tokenType", "Bearer");
-        
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setHeader("Location", null);
-        
-        objectMapper.writeValue(response.getWriter(), resultmap);
+            Map<String, String> resultmap = new HashMap<>();
+            resultmap.put("status", "success");
+            resultmap.put("message", "Authentication successful");
+            resultmap.put("token", token);
+            resultmap.put("tokenType", "Bearer");
+            
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setHeader("Location", null);
+            
+            objectMapper.writeValue(response.getWriter(), resultmap);
+            log.info("Response sent successfully");
+        } catch (Exception e) {
+            log.error("Error in OtpSuccessHandler: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
 }

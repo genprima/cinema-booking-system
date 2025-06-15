@@ -49,7 +49,7 @@ public class SecurityConfig {
     private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
     private static final String AUTH_URL = "/v1/auth/login";
-    private static final String OTP_URL = "/v1/auth/verify-otp";
+    private static final String OTP_URL = "/v1/auth/otp";
     private static final String V1_URL = "/v1/**";
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
