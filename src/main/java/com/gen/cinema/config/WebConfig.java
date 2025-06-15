@@ -9,13 +9,20 @@ import jakarta.mail.Session;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.security.Key;
 import java.time.Instant;
 import java.util.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 
 @Configuration
 public class WebConfig {
     
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     @Autowired
     private EmailConfig emailConfig;
@@ -44,20 +51,27 @@ public class WebConfig {
 
     @Bean
     public Session mailSession1(){
-        Session session = Session.getInstance(getProperties(), new Authenticator() {
+        return Session.getInstance(getProperties(), new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return passwordAuthentication1();
+                return new PasswordAuthentication(
+                    emailConfig.getUsername(),
+                    emailConfig.getPassword()
+                );
             }
         });
-        return session;
     }
 
     @Bean
-    public PasswordAuthentication passwordAuthentication1(){
-        return new PasswordAuthentication(
-            emailConfig.getUsername(),
-            emailConfig.getPassword()
-        );
+    public Key key() {
+        // For HS512, we need a key that's at least 512 bits (64 bytes)
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        if (keyBytes.length < 64) {
+            // If the key is too short, pad it with zeros to reach 64 bytes
+            byte[] paddedKey = new byte[64];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 64));
+            return Keys.hmacShaKeyFor(paddedKey);
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 } 

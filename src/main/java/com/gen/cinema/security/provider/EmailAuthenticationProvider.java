@@ -64,7 +64,7 @@ public class EmailAuthenticationProvider implements AuthenticationProvider {
         }
 
         // Return unauthenticated token
-        return new EmailAuthenticationToken(user);
+        return new EmailAuthenticationToken(user, email);
     }
 
     @Override

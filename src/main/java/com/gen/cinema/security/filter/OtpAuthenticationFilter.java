@@ -11,25 +11,26 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gen.cinema.dto.request.EmailLoginRequest;
-import com.gen.cinema.security.authentication.EmailAuthenticationToken;
+import com.gen.cinema.dto.request.OtpVerificationRequest;
+import com.gen.cinema.security.authentication.OtpAuthenticationToken;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
     private final ObjectMapper objectMapper;
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
+    private static final String OTP_EMAIL_SESSION_KEY = "OTP_EMAIL";
 
-    public EmailAuthenticationFilter(
+    public OtpAuthenticationFilter(
             String defaultFilterProcessesUrl,
             AuthenticationSuccessHandler successHandler,
             AuthenticationFailureHandler failureHandler,
@@ -43,26 +44,44 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
+        // Check if this request has already been processed
+        if (request.getAttribute("OTP_AUTH_PROCESSED") != null) {
+            return null;
+        }
+        
         try {
+            request.setAttribute("OTP_AUTH_PROCESSED", true);
+
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute(OTP_EMAIL_SESSION_KEY) == null) {
+                throw new BadCredentialsException("No OTP session found. Please request OTP first.");
+            }
+
+            String email = (String) session.getAttribute(OTP_EMAIL_SESSION_KEY);
+            log.debug("Retrieved email from session: {}", email);
 
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
-            
+
             if (requestBody == null || requestBody.trim().isEmpty()) {
-                log.error("Empty request body received");
                 throw new BadCredentialsException("Request body is empty");
             }
 
-            EmailLoginRequest loginRequest = objectMapper.readValue(requestBody, EmailLoginRequest.class);
+            OtpVerificationRequest verificationRequest = objectMapper
+                    .readValue(requestBody, OtpVerificationRequest.class);
 
-            if (loginRequest.email() == null || loginRequest.email().trim().isEmpty()) {
-                throw new BadCredentialsException("Email is required");
+            if (verificationRequest.otp() == null || verificationRequest.otp().isEmpty()) {
+                throw new BadCredentialsException("OTP is required");
             }
 
-            EmailAuthenticationToken authRequest = new EmailAuthenticationToken(loginRequest.email());
+            OtpAuthenticationToken authRequest = new OtpAuthenticationToken(
+                    email,
+                    verificationRequest.otp());
+            
             return this.getAuthenticationManager().authenticate(authRequest);
+
         } catch (IOException e) {
-            log.error("Error processing authentication request", e);
+            log.error("Error processing OTP verification request", e);
             throw new BadCredentialsException("Invalid request format");
         }
     }
@@ -70,12 +89,18 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
             Authentication authResult) throws IOException, ServletException {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute(OTP_EMAIL_SESSION_KEY);
+        }
         successHandler.onAuthenticationSuccess(request, response, authResult);
+        return;
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
         failureHandler.onAuthenticationFailure(request, response, failed);
+        return;
     }
 }
