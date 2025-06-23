@@ -20,4 +20,6 @@ public interface BookingService {
     );
     
     BookingDetailResponseDTO getBookingDetail(String bookingId);
+
+    Boolean payBooking(String bookingId);
 } 
