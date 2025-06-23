@@ -4,7 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,12 +18,17 @@ import com.gen.cinema.domain.MovieScheduleSeat;
 import com.gen.cinema.domain.User;
 import com.gen.cinema.dto.request.BookingRequest;
 import com.gen.cinema.dto.response.BookingResponse;
+import com.gen.cinema.dto.response.BookingListResponseDTO;
+import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.enums.BookingStatus;
 import com.gen.cinema.enums.SeatStatus;
+import com.gen.cinema.enums.UserRole;
+import com.gen.cinema.projection.BookingListProjection;
 import com.gen.cinema.repository.BookingRepository;
 import com.gen.cinema.repository.MovieScheduleSeatRepository;
 import com.gen.cinema.service.BookingService;
 import com.gen.cinema.service.UserService;
+import com.gen.cinema.util.PaginationUtil;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -90,7 +98,50 @@ public class BookingServiceImpl implements BookingService {
             booking.getBookingSeats().stream()
                 .map(bs -> bs.getMovieScheduleSeat().getStudioSeat().getRow() + 
                     bs.getMovieScheduleSeat().getStudioSeat().getNumber())
-                .collect(Collectors.toList())
+                .collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResultPageResponseDTO<BookingListResponseDTO> getBookingList(
+            String movieTitle, 
+            String bookingCode, 
+            String scheduleId, 
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+        
+        User currentUser = userService.getCurrentUser();
+        
+        Sort.Direction sortDirection = PaginationUtil.getDirection(direction);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        
+        String userEmail = (currentUser.getRole() == UserRole.USER) ? currentUser.getEmail() : null;
+        
+        Page<BookingListProjection> bookings = bookingRepository.findBookingsWithFilters(
+                userEmail, movieTitle, bookingCode, scheduleId, pageable);
+        
+        List<BookingListResponseDTO> bookingDTOs = bookings.getContent().stream()
+            .map(bookingData -> convertToBookingListResponseDTO(bookingData))
+            .collect(Collectors.toList());
+        
+        return PaginationUtil.createResultPageDTO(
+            bookingDTOs, 
+            bookings.getTotalElements(), 
+            bookings.getTotalPages());
+    }
+    
+
+    private BookingListResponseDTO convertToBookingListResponseDTO(BookingListProjection projection) {
+        return new BookingListResponseDTO(
+            projection.getSecureId().toString(),
+            projection.getBookingCode(),
+            projection.getMovieTitle(),
+            projection.getStatus(),
+            projection.getScheduleStartTime(),
+            projection.getUserEmail(),
+            projection.getTotalAmount(),
+            projection.getPaymentDeadline()
         );
     }
-} 
+}
