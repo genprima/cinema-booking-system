@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 import com.gen.cinema.dto.request.BookingRequest;
 import com.gen.cinema.dto.response.BookingListResponseDTO;
@@ -58,5 +59,10 @@ public class BookingController {
             @PathVariable("booking_id") String bookingId) {
         BookingDetailResponseDTO bookingDetail = bookingService.getBookingDetail(bookingId);
         return ResponseEntity.ok(bookingDetail);
+    }
+
+    @PatchMapping("/{booking_id}/pay")
+    public ResponseEntity<Boolean> payBooking(@PathVariable("booking_id") String bookingId) {
+        return ResponseEntity.ok(bookingService.payBooking(bookingId));
     }
 } 

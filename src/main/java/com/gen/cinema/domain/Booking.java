@@ -142,4 +142,12 @@ public class Booking extends AbstractBaseUUIDEntity {
     public void setBookingSeats(List<BookingSeat> bookingSeats) {
         this.bookingSeats = bookingSeats;
     }
+
+    public LocalDateTime getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDateTime paymentDate) {
+        this.paymentDate = paymentDate;
+    }
 } 

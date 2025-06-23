@@ -171,7 +171,25 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.getPaymentDate()
         );
     }
-    
+
+    @Override
+    public Boolean payBooking(String bookingId) {
+      
+        Booking booking = bookingRepository.findBySecureId(UUID.fromString(bookingId))
+            .orElseThrow(() -> new BadRequestAlertException("Booking not found"));
+
+        // Update booking status
+        booking.setStatus(BookingStatus.PAID);
+        booking.setPaymentDate(LocalDateTime.now());
+
+        // Update all related MovieScheduleSeat to BOOKED
+        for (BookingSeat bookingSeat : booking.getBookingSeats()) {
+            bookingSeat.getMovieScheduleSeat().setStatus(SeatStatus.BOOKED);
+        }
+
+        bookingRepository.save(booking);
+        return Boolean.TRUE;
+    }
 
     private BookingListResponseDTO convertToBookingListResponseDTO(BookingListProjection projection) {
         return new BookingListResponseDTO(

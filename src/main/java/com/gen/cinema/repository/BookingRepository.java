@@ -1,6 +1,7 @@
 package com.gen.cinema.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -61,4 +62,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            "WHERE b.secureId = :bookingId " +
            "ORDER BY ss.row, ss.number")
     List<BookingSeatDetailProjection> findSeatDetailsByBookingId(@Param("bookingId") UUID bookingId);
+
+    Optional<Booking> findBySecureId(UUID secureId);
 } 
