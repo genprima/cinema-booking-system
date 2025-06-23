@@ -26,9 +26,12 @@ import jakarta.validation.Valid;
 import com.gen.cinema.util.PaginationUtil;
 import com.gen.cinema.dto.response.MovieListResponseDTO;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/v1/movies")
 @Validated
+@SecurityRequirement(name = "Bearer Authentication")
 public class MovieController {
 
     private final MovieService movieService;

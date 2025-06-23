@@ -11,11 +11,13 @@ import com.gen.cinema.dto.response.CinemaResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.service.CinemaService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/v1/cinema")
 @Validated
+@SecurityRequirement(name = "Bearer Authentication")
 public class CinemaController {
 
     private final CinemaService cinemaService;

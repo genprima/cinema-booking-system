@@ -17,8 +17,30 @@ import java.util.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 
 @Configuration
+@SecurityScheme(
+    name = "Bearer Authentication",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "JWT"
+)
+@OpenAPIDefinition(
+    info = @Info(
+        title = "Cinema API", 
+        version = "1.0", 
+        description = "Cinema API",
+        contact = @Contact(
+            name = "Cinema API",
+            email = "contact@cinema.com"
+        )
+    )
+)
 public class WebConfig {
     
     @Value("${jwt.secret}")

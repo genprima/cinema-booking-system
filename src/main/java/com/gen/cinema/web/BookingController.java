@@ -18,11 +18,13 @@ import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.service.BookingService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/v1/booking")
 @Validated
+@SecurityRequirement(name = "Bearer Authentication")
 public class BookingController {
 
     private final BookingService bookingService;

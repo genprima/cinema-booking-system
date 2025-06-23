@@ -52,6 +52,14 @@ public class SecurityConfig {
     private static final String AUTH_URL = "/v1/auth/login";
     private static final String OTP_URL = "/v1/auth/otp";
     private static final String V1_URL = "/v1/**";
+    private static final String[] SWAGGER_URLS = {
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml",
+        "/swagger-resources/**",
+        "/webjars/**"
+    };
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -179,6 +187,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AUTH_URL, OTP_URL).permitAll()
+                        .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(V1_URL).authenticated()
                         .anyRequest().authenticated())
                 .securityMatcher(V1_URL)
