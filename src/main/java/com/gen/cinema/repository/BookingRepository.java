@@ -1,6 +1,7 @@
 package com.gen.cinema.repository;
 
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import com.gen.cinema.domain.Booking;
 import com.gen.cinema.projection.BookingListProjection;
+import com.gen.cinema.projection.BookingDetailProjection;
+import com.gen.cinema.projection.BookingSeatDetailProjection;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -34,4 +37,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Param("scheduleId") String scheduleId,
         Pageable pageable
     );
+
+    @Query("SELECT b.secureId as secureId, b.bookingCode as bookingCode, " +
+           "m.title as movieTitle, b.status as status, " +
+           "ms.startTime as scheduleStartTime, u.email as userEmail, " +
+           "b.totalAmount as totalAmount, b.paymentDeadline as paymentDeadline, " +
+           "b.transactionDate as transactionDate, b.paymentDate as paymentDate " +
+           "FROM Booking b " +
+           "JOIN b.movieSchedule ms " +
+           "JOIN ms.movie m " +
+           "JOIN b.user u " +
+           "WHERE b.secureId = :bookingId")
+    BookingDetailProjection findBookingDetailById(@Param("bookingId") UUID bookingId);
+
+    @Query("SELECT b.secureId as bookingId, ss.id as seatId, " +
+           "ss.row as row, ss.number as number, " +
+           "s.seatType as seatType, bs.price as price " +
+           "FROM Booking b " +
+           "JOIN b.bookingSeats bs " +
+           "JOIN bs.movieScheduleSeat mss " +
+           "JOIN mss.studioSeat ss " +
+           "JOIN ss.seat s " +
+           "WHERE b.secureId = :bookingId " +
+           "ORDER BY ss.row, ss.number")
+    List<BookingSeatDetailProjection> findSeatDetailsByBookingId(@Param("bookingId") UUID bookingId);
 } 

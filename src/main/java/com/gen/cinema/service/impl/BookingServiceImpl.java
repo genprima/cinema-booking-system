@@ -19,16 +19,21 @@ import com.gen.cinema.domain.User;
 import com.gen.cinema.dto.request.BookingRequest;
 import com.gen.cinema.dto.response.BookingResponse;
 import com.gen.cinema.dto.response.BookingListResponseDTO;
+import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.enums.BookingStatus;
 import com.gen.cinema.enums.SeatStatus;
 import com.gen.cinema.enums.UserRole;
 import com.gen.cinema.projection.BookingListProjection;
+import com.gen.cinema.projection.BookingDetailProjection;
+import com.gen.cinema.projection.BookingSeatDetailProjection;
 import com.gen.cinema.repository.BookingRepository;
 import com.gen.cinema.repository.MovieScheduleSeatRepository;
 import com.gen.cinema.service.BookingService;
 import com.gen.cinema.service.UserService;
 import com.gen.cinema.util.PaginationUtil;
+import com.gen.cinema.exception.BadRequestAlertException;
+import com.gen.cinema.dto.response.BookingSeatDetailDTO;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -129,6 +134,42 @@ public class BookingServiceImpl implements BookingService {
             bookingDTOs, 
             bookings.getTotalElements(), 
             bookings.getTotalPages());
+    }
+
+    @Override
+    public BookingDetailResponseDTO getBookingDetail(String bookingId) {
+        UUID bookingUuid = UUID.fromString(bookingId);
+        
+        BookingDetailProjection bookingDetail = bookingRepository.findBookingDetailById(bookingUuid);
+        if (bookingDetail == null) {
+            throw new BadRequestAlertException("Booking not found");
+        }
+        
+        List<BookingSeatDetailProjection> seatDetails = bookingRepository.findSeatDetailsByBookingId(bookingUuid);
+        
+        List<BookingSeatDetailDTO> seats = seatDetails.stream()
+            .map(seat -> new BookingSeatDetailDTO(
+                seat.getSeatId().toString(),
+                seat.getRow(),
+                seat.getNumber().toString(),
+                seat.getSeatType(),
+                seat.getPrice()
+            ))
+            .collect(Collectors.toList());
+        
+        return new BookingDetailResponseDTO(
+            bookingDetail.getSecureId().toString(),
+            bookingDetail.getBookingCode(),
+            bookingDetail.getMovieTitle(),
+            seats,
+            bookingDetail.getStatus(),
+            bookingDetail.getScheduleStartTime(),
+            bookingDetail.getUserEmail(),
+            bookingDetail.getTotalAmount(),
+            bookingDetail.getPaymentDeadline(),
+            bookingDetail.getTransactionDate(),
+            bookingDetail.getPaymentDate()
+        );
     }
     
 

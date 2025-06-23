@@ -46,6 +46,9 @@ public class Booking extends AbstractBaseUUIDEntity {
     @Column(name = "payment_deadline")
     private LocalDateTime paymentDeadline;
 
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
     @OneToMany(mappedBy = "booking", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     private List<BookingSeat> bookingSeats = new ArrayList<>();
 

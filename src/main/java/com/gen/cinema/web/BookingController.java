@@ -8,11 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.gen.cinema.dto.request.BookingRequest;
 import com.gen.cinema.dto.response.BookingListResponseDTO;
 import com.gen.cinema.dto.response.BookingResponse;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
+import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.service.BookingService;
 
 import jakarta.validation.Valid;
@@ -49,5 +51,12 @@ public class BookingController {
         );
         
         return ResponseEntity.ok(bookings);
+    }
+
+    @GetMapping("/{booking_id}")
+    public ResponseEntity<BookingDetailResponseDTO> getBookingDetail(
+            @PathVariable("booking_id") String bookingId) {
+        BookingDetailResponseDTO bookingDetail = bookingService.getBookingDetail(bookingId);
+        return ResponseEntity.ok(bookingDetail);
     }
 } 

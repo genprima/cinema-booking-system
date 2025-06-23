@@ -3,6 +3,7 @@ package com.gen.cinema.service;
 import com.gen.cinema.dto.request.BookingRequest;
 import com.gen.cinema.dto.response.BookingListResponseDTO;
 import com.gen.cinema.dto.response.BookingResponse;
+import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 
 public interface BookingService {
@@ -17,4 +18,6 @@ public interface BookingService {
         String sortBy,
         String direction
     );
+    
+    BookingDetailResponseDTO getBookingDetail(String bookingId);
 } 
