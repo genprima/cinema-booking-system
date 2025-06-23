@@ -31,6 +31,7 @@ import com.gen.cinema.security.provider.JwtAuthenticationProvider;
 import com.gen.cinema.security.util.JwtTokenFactory;
 import com.gen.cinema.security.util.JwtHeaderTokenExtractor;
 import com.gen.cinema.security.util.SkipPathRequestMatcher;
+import com.gen.cinema.service.EmailService;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.ProviderManager;
@@ -57,6 +58,7 @@ public class SecurityConfig {
     private final TimeZoneFilter timeZoneFilter;
     private final EmailAuthenticationProvider emailAuthenticationProvider;
     private final OtpAuthenticationProvider otpAuthenticationProvider;
+    private final EmailService emailService;
 
     public SecurityConfig(
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
@@ -67,7 +69,8 @@ public class SecurityConfig {
             ObjectMapper objectMapper,
             JwtTokenFactory jwtTokenFactory,
             JwtHeaderTokenExtractor tokenExtractor,
-            JwtAuthenticationProvider jwtAuthenticationProvider) {
+            JwtAuthenticationProvider jwtAuthenticationProvider,
+            EmailService emailService) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.timeZoneFilter = timeZoneFilter;
@@ -77,6 +80,7 @@ public class SecurityConfig {
         this.jwtTokenFactory = jwtTokenFactory;
         this.tokenExtractor = tokenExtractor;
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
+        this.emailService = emailService;
     }
 
     @Bean
@@ -100,7 +104,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationSuccessHandler emailAuthenticationSuccessHandler() {
-        return new EmailAuthenticationSuccessHandler(objectMapper);
+        return new EmailAuthenticationSuccessHandler(objectMapper, emailService);
     }
 
     @Bean

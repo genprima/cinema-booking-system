@@ -20,11 +20,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(OtpAuthenticationFilter.class);
     private final ObjectMapper objectMapper;
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
@@ -44,35 +45,17 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
-        // Check if this request has already been processed
-        if (request.getAttribute("OTP_AUTH_PROCESSED") != null) {
-            return null;
-        }
-        
         try {
-            request.setAttribute("OTP_AUTH_PROCESSED", true);
 
             HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute(OTP_EMAIL_SESSION_KEY) == null) {
-                throw new BadCredentialsException("No OTP session found. Please request OTP first.");
-            }
-
             String email = (String) session.getAttribute(OTP_EMAIL_SESSION_KEY);
             log.debug("Retrieved email from session: {}", email);
 
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
 
-            if (requestBody == null || requestBody.trim().isEmpty()) {
-                throw new BadCredentialsException("Request body is empty");
-            }
-
             OtpVerificationRequest verificationRequest = objectMapper
                     .readValue(requestBody, OtpVerificationRequest.class);
-
-            if (verificationRequest.otp() == null || verificationRequest.otp().isEmpty()) {
-                throw new BadCredentialsException("OTP is required");
-            }
 
             OtpAuthenticationToken authRequest = new OtpAuthenticationToken(
                     email,
@@ -82,7 +65,7 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
 
         } catch (IOException e) {
             log.error("Error processing OTP verification request", e);
-            throw new BadCredentialsException("Invalid request format");
+            throw new BadCredentialsException("Invalid request OTP format");
         }
     }
 

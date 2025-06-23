@@ -12,19 +12,23 @@ import com.gen.cinema.security.authentication.JwtAuthenticationToken;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.Key;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationProvider.class);
+
     private final Key key;
+
+    public JwtAuthenticationProvider(Key key) {
+        this.key = key;
+    }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

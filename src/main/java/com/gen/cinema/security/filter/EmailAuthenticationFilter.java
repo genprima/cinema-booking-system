@@ -20,10 +20,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailAuthenticationFilter.class);
 
     private final ObjectMapper objectMapper;
     private final AuthenticationSuccessHandler successHandler;
@@ -47,23 +49,16 @@ public class EmailAuthenticationFilter extends AbstractAuthenticationProcessingF
 
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
+
+            log.debug("Request body: {}", requestBody);
             
-            if (requestBody == null || requestBody.trim().isEmpty()) {
-                log.error("Empty request body received");
-                throw new BadCredentialsException("Request body is empty");
-            }
-
             EmailLoginRequest loginRequest = objectMapper.readValue(requestBody, EmailLoginRequest.class);
-
-            if (loginRequest.email() == null || loginRequest.email().trim().isEmpty()) {
-                throw new BadCredentialsException("Email is required");
-            }
 
             EmailAuthenticationToken authRequest = new EmailAuthenticationToken(loginRequest.email());
             return this.getAuthenticationManager().authenticate(authRequest);
         } catch (IOException e) {
             log.error("Error processing authentication request", e);
-            throw new BadCredentialsException("Invalid request format");
+            throw new BadCredentialsException("Invalid request login format");
         }
     }
 

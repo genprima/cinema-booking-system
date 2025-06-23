@@ -7,29 +7,33 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.gen.cinema.domain.User;
 import com.gen.cinema.domain.UserOtp;
 import com.gen.cinema.repository.UserOtpRepository;
 import com.gen.cinema.repository.UserRepository;
 import com.gen.cinema.security.authentication.OtpAuthenticationToken;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class OtpAuthenticationProvider implements AuthenticationProvider {
+    private static final Logger log = LoggerFactory.getLogger(OtpAuthenticationProvider.class);
 
     private final UserRepository userRepository;
     private final UserOtpRepository userOtpRepository;
 
+    public OtpAuthenticationProvider(UserRepository userRepository, UserOtpRepository userOtpRepository) {
+        this.userRepository = userRepository;
+        this.userOtpRepository = userOtpRepository;
+    }
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        
+
         OtpAuthenticationToken authToken = (OtpAuthenticationToken) authentication;
         String email = authToken.getEmail();
         String otp = (String) authToken.getCredentials();
@@ -38,7 +42,6 @@ public class OtpAuthenticationProvider implements AuthenticationProvider {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or OTP"));
-
 
         UserOtp userOtp = userOtpRepository.findLatestActiveOtp(user.getId(), Instant.now())
                 .orElseThrow(() -> new BadCredentialsException("No active OTP found"));
@@ -66,4 +69,4 @@ public class OtpAuthenticationProvider implements AuthenticationProvider {
     public boolean supports(Class<?> authentication) {
         return OtpAuthenticationToken.class.isAssignableFrom(authentication);
     }
-} 
+}
