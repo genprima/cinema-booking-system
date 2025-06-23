@@ -37,21 +37,28 @@ public interface MovieScheduleSeatRepository extends JpaRepository<MovieSchedule
 
     @Query("SELECT COUNT(mss) FROM MovieScheduleSeat mss " +
            "JOIN mss.studioSeat ss " +
-           "WHERE mss.secureId IN :secureIds " +
+           "WHERE mss.movieSchedule IN (" +
+           "   SELECT DISTINCT mss2.movieSchedule FROM MovieScheduleSeat mss2 WHERE mss2.secureId IN :secureIds" +
+           ") " +
+           "AND ss.row IN (" +
+           "   SELECT DISTINCT ss2.row FROM MovieScheduleSeat mss2 JOIN mss2.studioSeat ss2 WHERE mss2.secureId IN :secureIds" +
+           ") " +
+           "AND mss.status = 'AVAILABLE' " +
+           "AND mss.secureId NOT IN :secureIds " +
            "AND EXISTS (" +
            "   SELECT 1 FROM MovieScheduleSeat mss2 " +
            "   JOIN mss2.studioSeat ss2 " +
            "   WHERE mss2.movieSchedule = mss.movieSchedule " +
            "   AND ss2.row = ss.row " +
-           "   AND ss2.xCoordinate = ss.xCoordinate - 1 " +  // x-1 position
-           "   AND mss2.status = 'AVAILABLE' " +
+           "   AND ss2.xCoordinate = ss.xCoordinate - 1 " +
+           "   AND (mss2.status != 'AVAILABLE' OR mss2.secureId IN :secureIds)" +
            "   AND EXISTS (" +
            "       SELECT 1 FROM MovieScheduleSeat mss3 " +
            "       JOIN mss3.studioSeat ss3 " +
            "       WHERE mss3.movieSchedule = mss.movieSchedule " +
            "       AND ss3.row = ss.row " +
-           "       AND ss3.xCoordinate = ss.xCoordinate - 2 " +  // x-2 position
-           "       AND mss3.status != 'AVAILABLE'" +
+           "       AND ss3.xCoordinate = ss.xCoordinate + 1 " +
+           "       AND (mss3.status != 'AVAILABLE' OR mss3.secureId IN :secureIds)" +
            "   )" +
            ")")
     long countBySecureIdsWithPattern(@Param("secureIds") List<UUID> secureIds);
