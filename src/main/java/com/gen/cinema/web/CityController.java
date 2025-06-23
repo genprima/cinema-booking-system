@@ -10,8 +10,11 @@ import com.gen.cinema.dto.response.CityResponseDTO;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.service.CityService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/v1/city")
+@SecurityRequirement(name = "Bearer Authentication")
 public class CityController {
 
     private final CityService cityService;

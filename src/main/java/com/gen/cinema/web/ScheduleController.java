@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import jakarta.validation.constraints.NotNull;
 
 @RestController
 @RequestMapping("/v1/schedule")
 @Validated
+@SecurityRequirement(name = "Bearer Authentication")
 public class ScheduleController {
     private final ScheduleService scheduleService;
 
