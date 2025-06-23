@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -25,6 +26,7 @@ public class ScheduleController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ScheduleDaysResponseDTO> getScheduleDays(
             @RequestParam @NotNull(message = "studioId is required") Long studioId,
             @RequestParam @NotNull(message = "movieId is required") Long movieId) {
@@ -32,6 +34,7 @@ public class ScheduleController {
     }
 
     @GetMapping("/times")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ScheduleTimesResponseDTO> getScheduleTimes(
             @RequestParam @NotNull(message = "studioId is required") Long studioId,
             @RequestParam @NotNull(message = "movieId is required") Long movieId,
@@ -40,6 +43,7 @@ public class ScheduleController {
     }
 
     @GetMapping("/{scheduleId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingScheduleResponse> getScheduleDetail(
             @PathVariable @NotNull(message = "scheduleId is required") String scheduleId) {
         return ResponseEntity.ok(scheduleService.getScheduleDetail(scheduleId));

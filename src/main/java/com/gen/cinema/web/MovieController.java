@@ -4,6 +4,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -67,6 +68,7 @@ public class MovieController {
     }
 
     @PutMapping("/{movieId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MovieDetailResponseDTO> updateMovie(
             @PathVariable Long movieId,
             @Valid @RequestBody UpdateMovieRequestDTO request) {
@@ -75,6 +77,7 @@ public class MovieController {
     }
 
     @PutMapping("/{movieId}/presigned-url")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> getMovieImageUploadUrl(
             @PathVariable @NotNull(message = "Movie ID is required") Long movieId,
             @RequestParam @ValidImageFilename String filename) {
@@ -86,6 +89,7 @@ public class MovieController {
     }
 
     @PutMapping("/{movieId}/image")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateMovieImage(
             @PathVariable @NotNull(message = "Movie ID is required") Long movieId,
             @RequestParam @ValidImageFilename String filename) {
