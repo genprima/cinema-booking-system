@@ -8,24 +8,18 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
-
 import com.gen.cinema.domain.User;
 import com.gen.cinema.domain.UserOtp;
-import com.gen.cinema.exception.BadRequestAlertException;
 import com.gen.cinema.repository.UserRepository;
 import com.gen.cinema.repository.UserOtpRepository;
 import com.gen.cinema.security.authentication.EmailAuthenticationToken;
 import com.gen.cinema.service.EmailService;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Component
 public class EmailAuthenticationProvider implements AuthenticationProvider {
 
     private final UserRepository userRepository;
     private final UserOtpRepository userOtpRepository;
-    private final EmailService emailService;
     private static final int OTP_EXPIRY_MINUTES = 5;
 
     public EmailAuthenticationProvider(
@@ -34,7 +28,6 @@ public class EmailAuthenticationProvider implements AuthenticationProvider {
             EmailService emailService) {
         this.userRepository = userRepository;
         this.userOtpRepository = userOtpRepository;
-        this.emailService = emailService;
     }
 
     @Override
@@ -55,16 +48,8 @@ public class EmailAuthenticationProvider implements AuthenticationProvider {
         userOtp.setExpiresAt(expiresAt);
         userOtpRepository.save(userOtp);
 
-        try {
-            log.info("Sending OTP to user {}: {}", email, otp);
-            emailService.sendMail("Your OTP is: " + otp + ". It will expire in " + OTP_EXPIRY_MINUTES + " minutes.");
-        } catch (Exception e) {
-            log.error("Error sending email: {}", e.getMessage());
-            throw new BadRequestAlertException("Failed to send OTP email");
-        }
-
         // Return unauthenticated token
-        return new EmailAuthenticationToken(user, email);
+        return new EmailAuthenticationToken(user, email, otp);
     }
 
     @Override

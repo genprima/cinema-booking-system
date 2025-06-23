@@ -17,11 +17,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.Key;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @Component
 public class JwtTokenFactory {
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenFactory.class);
     
     @Value("${jwt.expiration}")
     private Long expiration;

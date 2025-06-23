@@ -13,9 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "user_otp")
 public class UserOtp {
@@ -43,5 +41,45 @@ public class UserOtp {
 
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setExpiresAt(Instant expiresAt) {
+        this.expiresAt = expiresAt;
     }
 } 

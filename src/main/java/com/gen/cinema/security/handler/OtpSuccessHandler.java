@@ -16,10 +16,12 @@ import com.gen.cinema.security.util.JwtTokenFactory;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class OtpSuccessHandler implements AuthenticationSuccessHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(OtpSuccessHandler.class);
 
     private final ObjectMapper objectMapper;
     private final JwtTokenFactory tokenFactory;
