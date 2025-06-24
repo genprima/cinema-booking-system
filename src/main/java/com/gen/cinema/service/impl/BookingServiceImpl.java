@@ -79,7 +79,7 @@ public class BookingServiceImpl implements BookingService {
         // Create booking seats using stream
         requestedSeats.stream()
             .peek(seat -> {
-                seat.setStatus(SeatStatus.BOOKED);
+                seat.setStatus(SeatStatus.WAITING_PAYMENT);
                 movieScheduleSeatRepository.save(seat);
             })
             .map(seat -> {
