@@ -64,4 +64,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<BookingSeatDetailProjection> findSeatDetailsByBookingId(@Param("bookingId") UUID bookingId);
 
     Optional<Booking> findBySecureId(UUID secureId);
+
+    Optional<Booking> findBySecureIdAndUserEmail(UUID secureId, String userEmail);
 } 

@@ -1,6 +1,7 @@
 package com.gen.cinema.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ import com.gen.cinema.dto.response.BookingResponse;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.service.BookingService;
+import com.gen.cinema.validation.annotation.CanAccessBooking;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -58,12 +60,13 @@ public class BookingController {
 
     @GetMapping("/{booking_id}")
     public ResponseEntity<BookingDetailResponseDTO> getBookingDetail(
-            @PathVariable("booking_id") String bookingId) {
+            @PathVariable("booking_id") @CanAccessBooking String bookingId) {
         BookingDetailResponseDTO bookingDetail = bookingService.getBookingDetail(bookingId);
         return ResponseEntity.ok(bookingDetail);
     }
 
     @PatchMapping("/{booking_id}/pay")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Boolean> payBooking(@PathVariable("booking_id") String bookingId) {
         return ResponseEntity.ok(bookingService.payBooking(bookingId));
     }
