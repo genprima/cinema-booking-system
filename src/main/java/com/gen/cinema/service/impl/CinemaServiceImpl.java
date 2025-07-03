@@ -25,7 +25,7 @@ public class CinemaServiceImpl implements CinemaService {
         Sort.Direction sortDirection = PaginationUtil.getDirection(direction);
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
-        Page<CinemaResponseDTO> cinemaPage = cityCinemaRepository.findCinemasByCityCode(cityCode, cinemaName, pageRequest);
+        Page<CinemaResponseDTO> cinemaPage = cityCinemaRepository.findCinemasByCityCode(cityCode.toUpperCase(), cinemaName, pageRequest);
 
         return PaginationUtil.createResultPageDTO(
             cinemaPage.getContent(),

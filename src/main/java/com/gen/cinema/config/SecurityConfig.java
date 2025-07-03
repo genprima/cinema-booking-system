@@ -32,6 +32,7 @@ import com.gen.cinema.security.util.JwtTokenFactory;
 import com.gen.cinema.security.util.JwtHeaderTokenExtractor;
 import com.gen.cinema.security.util.SkipPathRequestMatcher;
 import com.gen.cinema.service.EmailService;
+import com.gen.cinema.service.SessionService;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.ProviderManager;
@@ -51,6 +52,7 @@ public class SecurityConfig {
 
     private static final String AUTH_URL = "/v1/auth/login";
     private static final String OTP_URL = "/v1/auth/otp";
+    private static final String TEST_SESSION_URL = "/v1/auth/test-session";
     private static final String V1_URL = "/v1/**";
     private static final String[] SWAGGER_URLS = {
         "/swagger-ui/**",
@@ -67,6 +69,7 @@ public class SecurityConfig {
     private final EmailAuthenticationProvider emailAuthenticationProvider;
     private final OtpAuthenticationProvider otpAuthenticationProvider;
     private final EmailService emailService;
+    private final SessionService sessionService;
 
     public SecurityConfig(
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
@@ -78,7 +81,8 @@ public class SecurityConfig {
             JwtTokenFactory jwtTokenFactory,
             JwtHeaderTokenExtractor tokenExtractor,
             JwtAuthenticationProvider jwtAuthenticationProvider,
-            EmailService emailService) {
+            EmailService emailService,
+            SessionService sessionService) {
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.timeZoneFilter = timeZoneFilter;
@@ -89,6 +93,7 @@ public class SecurityConfig {
         this.tokenExtractor = tokenExtractor;
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.emailService = emailService;
+        this.sessionService = sessionService;
     }
 
     @Bean
@@ -112,7 +117,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationSuccessHandler emailAuthenticationSuccessHandler() {
-        return new EmailAuthenticationSuccessHandler(objectMapper, emailService);
+        return new EmailAuthenticationSuccessHandler(objectMapper, emailService, sessionService);
     }
 
     @Bean
@@ -150,7 +155,7 @@ public class SecurityConfig {
             @Qualifier("authFailureHandler") AuthenticationFailureHandler failureHandler,
             ObjectMapper objectMapper) {
         OtpAuthenticationFilter otpAuthenticationFilter = new OtpAuthenticationFilter(OTP_URL, successHandler, failureHandler,
-                objectMapper);
+                objectMapper, sessionService);
         otpAuthenticationFilter.setAuthenticationManager(authenticationManager);
         return otpAuthenticationFilter;
     }
@@ -159,7 +164,7 @@ public class SecurityConfig {
     public JwtTokenAuthenticationProcessingFilter jwtTokenAuthenticationProcessingFilter(
             AuthenticationManager authenticationManager,
             AuthenticationFailureHandler failureHandler) {
-        List<String> pathsToSkip = Arrays.asList(AUTH_URL, OTP_URL);
+        List<String> pathsToSkip = Arrays.asList(AUTH_URL, OTP_URL, TEST_SESSION_URL);
         SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, V1_URL);
         JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(
                 failureHandler, tokenExtractor, matcher);
@@ -186,7 +191,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(AUTH_URL, OTP_URL).permitAll()
+                        .requestMatchers(AUTH_URL, OTP_URL, TEST_SESSION_URL).permitAll()
                         .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(V1_URL).authenticated()
                         .anyRequest().authenticated())

@@ -29,7 +29,7 @@ public class CinemaController {
     @GetMapping
     public ResponseEntity<ResultPageResponseDTO<CinemaResponseDTO>> getCinemasByCity(
             @RequestParam @NotBlank(message = "City code is required") String cityCode,
-            @RequestParam(required = false) String cinemaName,
+            @RequestParam(defaultValue = "") String cinemaName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "cinema.name") String sortBy,

@@ -191,6 +191,32 @@ public class BookingServiceImpl implements BookingService {
         return Boolean.TRUE;
     }
 
+    @Override
+    @Transactional
+    public Boolean cancelBooking(String bookingId) {
+        User currentUser = userService.getCurrentUser();
+        
+        Booking booking = bookingRepository.findBySecureId(UUID.fromString(bookingId))
+            .orElseThrow(() -> new BadRequestAlertException("Booking not found"));
+
+        if (currentUser.getRole() != UserRole.ADMIN && !booking.getUser().getEmail().equals(currentUser.getEmail())) {
+            throw new BadRequestAlertException("You can only cancel your own bookings");
+        }
+
+        if (booking.getStatus() != BookingStatus.WAITING_PAYMENT && booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestAlertException("Only pending or waiting payment bookings can be cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        for (BookingSeat bookingSeat : booking.getBookingSeats()) {
+            bookingSeat.getMovieScheduleSeat().setStatus(SeatStatus.AVAILABLE);
+        }
+
+        bookingRepository.save(booking);
+        return Boolean.TRUE;
+    }
+
     private BookingListResponseDTO convertToBookingListResponseDTO(BookingListProjection projection) {
         return new BookingListResponseDTO(
             projection.getSecureId().toString(),

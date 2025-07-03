@@ -14,12 +14,12 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gen.cinema.dto.request.OtpVerificationRequest;
 import com.gen.cinema.security.authentication.OtpAuthenticationToken;
+import com.gen.cinema.service.SessionService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,53 +29,55 @@ public class OtpAuthenticationFilter extends AbstractAuthenticationProcessingFil
     private final ObjectMapper objectMapper;
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
-    private static final String OTP_EMAIL_SESSION_KEY = "OTP_EMAIL";
+    private final SessionService sessionService;
 
     public OtpAuthenticationFilter(
             String defaultFilterProcessesUrl,
             AuthenticationSuccessHandler successHandler,
             AuthenticationFailureHandler failureHandler,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            SessionService sessionService) {
         super(new AntPathRequestMatcher(defaultFilterProcessesUrl, "POST"));
         this.objectMapper = objectMapper;
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
+        this.sessionService = sessionService;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
         try {
-
-            HttpSession session = request.getSession(false);
-            String email = (String) session.getAttribute(OTP_EMAIL_SESSION_KEY);
-            log.debug("Retrieved email from session: {}", email);
-
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
 
             OtpVerificationRequest verificationRequest = objectMapper
                     .readValue(requestBody, OtpVerificationRequest.class);
 
+            String sessionId = request.getHeader("X-Session-ID");
+            log.debug("Received OTP verification request with sessionId: {}", sessionId);
+            
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                log.warn("Missing or empty X-Session-ID header in OTP verification request");
+                throw new BadCredentialsException("Session ID is required in X-Session-ID header");
+            }
+
             OtpAuthenticationToken authRequest = new OtpAuthenticationToken(
-                    email,
-                    verificationRequest.otp());
+                    null,
+                    verificationRequest.otp(),
+                    sessionId);
             
             return this.getAuthenticationManager().authenticate(authRequest);
 
         } catch (IOException e) {
             log.error("Error processing OTP verification request", e);
-            throw new BadCredentialsException("Invalid request OTP format");
+            throw new BadCredentialsException("Invalid request format");
         }
     }
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
             Authentication authResult) throws IOException, ServletException {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.removeAttribute(OTP_EMAIL_SESSION_KEY);
-        }
         successHandler.onAuthenticationSuccess(request, response, authResult);
         return;
     }

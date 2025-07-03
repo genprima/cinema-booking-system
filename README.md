@@ -92,7 +92,7 @@ A comprehensive cinema booking system that manages movie schedules, seat booking
 3. **Payment Handling**
    - Each booking has a payment deadline
    - Booking status tracks payment state
-   - Supports cancellation and refund processes
+   - Supports cancellation processes
 
 4. **Price Management**
    - Base price set at schedule level
