@@ -68,6 +68,13 @@ public class BookingServiceImpl implements BookingService {
         MovieScheduleSeat firstSeat = requestedSeats.get(0);
         MovieSchedule movieSchedule = firstSeat.getMovieSchedule();
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime movieStartTime = movieSchedule.getStartTime();
+        
+        if (now.isAfter(movieStartTime) || now.isEqual(movieStartTime)) {
+            throw new BadRequestAlertException("Cannot book seats for a movie that has already started");
+        }
+
         // Create booking
         Booking booking = new Booking();
         booking.setUser(currentUser);

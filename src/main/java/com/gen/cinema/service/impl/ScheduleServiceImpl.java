@@ -60,7 +60,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
         for (var ms : schedules) {
             String timeStr = ms.getStartTime().format(timeFormatter);
-            timeDTOs.add(new ScheduleTimeDTO(ms.getSecureId().toString(), timeStr));
+            Boolean isAvailable = LocalDateTime.now().isBefore(ms.getStartTime());
+            timeDTOs.add(new ScheduleTimeDTO(ms.getSecureId().toString(), timeStr,isAvailable));
         }
         return new ScheduleTimesResponseDTO(timeDTOs);
     }
