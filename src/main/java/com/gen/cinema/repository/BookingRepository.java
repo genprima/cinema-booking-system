@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -66,4 +67,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findBySecureId(UUID secureId);
 
     Optional<Booking> findBySecureIdAndUserEmail(UUID secureId, String userEmail);
+    
+    @Query("UPDATE Booking b SET b.status = 'CANCELLED' " +
+           "WHERE b.status IN ('WAITING_PAYMENT', 'PENDING') " +
+           "AND b.paymentDeadline < :currentTime")
+    @Modifying
+    int cancelExpiredBookings(@Param("currentTime") java.time.LocalDateTime currentTime);
+    
+    @Query("UPDATE MovieScheduleSeat mss SET mss.status = 'AVAILABLE' " +
+           "WHERE mss IN (SELECT bs.movieScheduleSeat FROM Booking b " +
+           "JOIN b.bookingSeats bs " +
+           "WHERE b.status = 'CANCELLED' " +
+           "AND b.paymentDeadline < :currentTime)")
+    @Modifying
+    int releaseExpiredBookingSeats(@Param("currentTime") java.time.LocalDateTime currentTime);
 } 

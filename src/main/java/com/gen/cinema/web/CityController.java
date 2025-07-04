@@ -29,7 +29,7 @@ public class CityController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String direction,
-            @RequestParam(required = false) String name) {
+            @RequestParam(defaultValue = "") String name) {
         
         return ResponseEntity.ok(cityService.getCities(name, page, size, sortBy, direction));
     }

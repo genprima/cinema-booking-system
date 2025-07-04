@@ -13,10 +13,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gen.cinema.exception.BadRequestAlertException;
 import com.gen.cinema.security.authentication.EmailAuthenticationToken;
 import com.gen.cinema.service.EmailService;
+import com.gen.cinema.service.SessionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,13 +24,14 @@ public class EmailAuthenticationSuccessHandler implements AuthenticationSuccessH
 
     private static final Logger log = LoggerFactory.getLogger(EmailAuthenticationSuccessHandler.class);
     private final ObjectMapper objectMapper;
-    private static final String OTP_EMAIL_SESSION_KEY = "OTP_EMAIL";
     private final EmailService emailService;
+    private final SessionService sessionService;
     private static final int OTP_EXPIRY_MINUTES = 100;
 
-    public EmailAuthenticationSuccessHandler(ObjectMapper objectMapper, EmailService emailService) {
+    public EmailAuthenticationSuccessHandler(ObjectMapper objectMapper, EmailService emailService, SessionService sessionService) {
         this.objectMapper = objectMapper;
         this.emailService = emailService;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -40,10 +41,9 @@ public class EmailAuthenticationSuccessHandler implements AuthenticationSuccessH
         String email = authToken.getEmail();
         String otp = authToken.getOtp();
         
-        // Store email in session
-        HttpSession session = request.getSession();
-        session.setAttribute(OTP_EMAIL_SESSION_KEY, email);
-        log.debug("Stored email in session: {}", email);
+        // Store email in database session
+        String sessionId = sessionService.createSession(email, email, OTP_EXPIRY_MINUTES);
+        log.debug("Stored email in database session: {} with session ID: {}", email, sessionId);
 
         try {
             log.info("Sending OTP to user {}: {}", email, otp);
@@ -56,6 +56,7 @@ public class EmailAuthenticationSuccessHandler implements AuthenticationSuccessH
         Map<String, String> resultmap = new HashMap<>();
         resultmap.put("status", "success");
         resultmap.put("message", "OTP has been sent to your email");
+        resultmap.put("sessionId", sessionId);
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getWriter(), resultmap);

@@ -18,6 +18,6 @@ public interface CityCinemaRepository extends JpaRepository<CityCinema, Long> {
            "JOIN cc.cinema c ON c.id = cc.cinema.id " +
            "JOIN cc.city city ON city.id = cc.city.id " +
            "WHERE city.code = :cityCode " +
-           "AND (:cinemaName IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :cinemaName, '%')))")
+           "AND (COALESCE(:cinemaName, '') = '' OR c.name LIKE CONCAT('%', :cinemaName, '%'))")
     Page<CinemaResponseDTO> findCinemasByCityCode(@Param("cityCode") String cityCode, @Param("cinemaName") String cinemaName, Pageable pageable);
 } 

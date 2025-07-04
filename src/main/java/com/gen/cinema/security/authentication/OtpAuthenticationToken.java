@@ -8,12 +8,22 @@ public class OtpAuthenticationToken extends AbstractAuthenticationToken {
 
     private final String email;
     private final String otp;
+    private final String sessionId;
     private Object principal;
 
     public OtpAuthenticationToken(String email, String otp) {
         super(null);
         this.email = email;
         this.otp = otp;
+        this.sessionId = null;
+        setAuthenticated(false);
+    }
+
+    public OtpAuthenticationToken(String email, String otp, String sessionId) {
+        super(null);
+        this.email = email;
+        this.otp = otp;
+        this.sessionId = sessionId;
         setAuthenticated(false);
     }
 
@@ -21,6 +31,7 @@ public class OtpAuthenticationToken extends AbstractAuthenticationToken {
         super(authorities);
         this.email = null;
         this.otp = null;
+        this.sessionId = null;
         this.principal = principal;
         setAuthenticated(true);
     }
@@ -37,5 +48,9 @@ public class OtpAuthenticationToken extends AbstractAuthenticationToken {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 } 

@@ -30,9 +30,9 @@ public class CanAccessBookingValidator implements ConstraintValidator<CanAccessB
 
         Principal principal = (Principal) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
-        String userEmail = principal.getEmail();
+        String userEmail = principal.getName();
 
-        if (principal.getAuthorities().contains(new SimpleGrantedAuthority(UserRole.ADMIN.name()))) {
+        if (principal.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + UserRole.ADMIN.name()))) {
             return true;
         }
 

@@ -68,6 +68,13 @@ public class BookingServiceImpl implements BookingService {
         MovieScheduleSeat firstSeat = requestedSeats.get(0);
         MovieSchedule movieSchedule = firstSeat.getMovieSchedule();
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime movieStartTime = movieSchedule.getStartTime();
+        
+        if (now.isAfter(movieStartTime) || now.isEqual(movieStartTime)) {
+            throw new BadRequestAlertException("Cannot book seats for a movie that has already started");
+        }
+
         // Create booking
         Booking booking = new Booking();
         booking.setUser(currentUser);
@@ -185,6 +192,32 @@ public class BookingServiceImpl implements BookingService {
         // Update all related MovieScheduleSeat to BOOKED
         for (BookingSeat bookingSeat : booking.getBookingSeats()) {
             bookingSeat.getMovieScheduleSeat().setStatus(SeatStatus.BOOKED);
+        }
+
+        bookingRepository.save(booking);
+        return Boolean.TRUE;
+    }
+
+    @Override
+    @Transactional
+    public Boolean cancelBooking(String bookingId) {
+        User currentUser = userService.getCurrentUser();
+        
+        Booking booking = bookingRepository.findBySecureId(UUID.fromString(bookingId))
+            .orElseThrow(() -> new BadRequestAlertException("Booking not found"));
+
+        if (currentUser.getRole() != UserRole.ADMIN && !booking.getUser().getEmail().equals(currentUser.getEmail())) {
+            throw new BadRequestAlertException("You can only cancel your own bookings");
+        }
+
+        if (booking.getStatus() != BookingStatus.WAITING_PAYMENT && booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestAlertException("Only pending or waiting payment bookings can be cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        for (BookingSeat bookingSeat : booking.getBookingSeats()) {
+            bookingSeat.getMovieScheduleSeat().setStatus(SeatStatus.AVAILABLE);
         }
 
         bookingRepository.save(booking);

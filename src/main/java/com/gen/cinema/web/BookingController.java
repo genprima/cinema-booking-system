@@ -18,6 +18,7 @@ import com.gen.cinema.dto.response.BookingResponse;
 import com.gen.cinema.dto.response.ResultPageResponseDTO;
 import com.gen.cinema.dto.response.BookingDetailResponseDTO;
 import com.gen.cinema.service.BookingService;
+import com.gen.cinema.service.BookingSchedulerService;
 import com.gen.cinema.validation.annotation.CanAccessBooking;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -30,9 +31,11 @@ import jakarta.validation.Valid;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingSchedulerService bookingSchedulerService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService, BookingSchedulerService bookingSchedulerService) {
         this.bookingService = bookingService;
+        this.bookingSchedulerService = bookingSchedulerService;
     }
 
     @PostMapping
@@ -69,5 +72,17 @@ public class BookingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Boolean> payBooking(@PathVariable("booking_id") String bookingId) {
         return ResponseEntity.ok(bookingService.payBooking(bookingId));
+    }
+
+    @PatchMapping("/{booking_id}/cancel")
+    public ResponseEntity<Boolean> cancelBooking(@PathVariable("booking_id") String bookingId) {
+        return ResponseEntity.ok(bookingService.cancelBooking(bookingId));
+    }
+
+    @PostMapping("/cancel-expired")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> triggerCancelExpiredBookings() {
+        bookingSchedulerService.cancelExpiredBookings();
+        return ResponseEntity.ok("Expired booking cancellation process triggered successfully");
     }
 } 
